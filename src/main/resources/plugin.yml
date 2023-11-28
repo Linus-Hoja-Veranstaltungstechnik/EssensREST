@@ -1,4 +1,0 @@
-name: net.alphalightning.paper.template
-version: '${project.version}'
-main: net.alphalightning.paper.template.Plugin
-api-version: '1.20'
