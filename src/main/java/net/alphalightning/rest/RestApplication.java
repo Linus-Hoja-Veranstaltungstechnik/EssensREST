@@ -56,6 +56,8 @@ public abstract class RestApplication implements HttpHandler {
 
         rootPath = restApplicationPath.value();
 
+        System.out.println(this.getClass().getSimpleName() + " registered for " + rootPath);
+
         server.createContext(rootPath, this);
     }
 
@@ -83,6 +85,10 @@ public abstract class RestApplication implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         HttpsExchange httpsExchange = (HttpsExchange) exchange;
+
+        System.out.println("Handling connection from " + httpsExchange.getRemoteAddress());
+        System.out.println("Handling endpoint " + httpsExchange.getRequestURI().getPath());
+
         RestMethod requestMethod = RestMethod.valueOf(httpsExchange.getRequestMethod());
         URI requestURI = httpsExchange.getRequestURI();
 

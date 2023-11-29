@@ -7,12 +7,10 @@ import com.sun.net.httpserver.HttpsServer;
 import net.alphalightning.rest.RestApplication;
 
 import javax.net.ssl.*;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -41,7 +39,7 @@ public class RestApplicationHandler {
             // initialise the keystore
             char[] password = KEYSTORE_PASSWORD.toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
-            FileInputStream fis = new FileInputStream(new File(RestApplicationHandler.class.getResource("/certificate.jks").toURI()));
+            InputStream fis = RestApplicationHandler.class.getClassLoader().getResourceAsStream("/certificate.jks");
             ks.load(fis, password);
 
             // setup the key manager factory
@@ -77,8 +75,18 @@ public class RestApplicationHandler {
             httpsServer.setExecutor(new ThreadPoolExecutor(4, 8, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100)));
 
             httpsServer.start();
+
+            httpsServer.createContext("/serviceup", ex -> {
+                HttpsExchange sex = (HttpsExchange) ex;
+                System.out.println(sex.getRemoteAddress());
+                sex.sendResponseHeaders(200, SERVICE_RUNNING_RESPONSE.getBytes(StandardCharsets.UTF_8).length);
+                OutputStream os = sex.getResponseBody();
+                os.write(SERVICE_RUNNING_RESPONSE.getBytes(StandardCharsets.UTF_8));
+                os.flush();
+                os.close();
+            });
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException |
-                 UnrecoverableKeyException | KeyManagementException | URISyntaxException e) {
+                 UnrecoverableKeyException | KeyManagementException e) {
             throw new RuntimeException(e);
         }
     }
@@ -90,15 +98,6 @@ public class RestApplicationHandler {
     public <T extends RestApplication> void registerRestApplication(T restApplication) {
         restApplications.add(restApplication);
         restApplication.init(httpsServer);
-        httpsServer.createContext("/serviceup", ex -> {
-            HttpsExchange sex = (HttpsExchange) ex;
-            System.out.println(sex.getRemoteAddress());
-            sex.sendResponseHeaders(200, SERVICE_RUNNING_RESPONSE.getBytes(StandardCharsets.UTF_8).length);
-            OutputStream os = sex.getResponseBody();
-            os.write(SERVICE_RUNNING_RESPONSE.getBytes(StandardCharsets.UTF_8));
-            os.flush();
-            os.close();
-        });
     }
 
 }
