@@ -170,6 +170,7 @@ public abstract class RestApplication implements HttpHandler {
         String[] fields = parsePath(requestedPath);
         int fieldCount = fields.length;
         List<Method> possibleMethods = methods.get(requestMethod);
+        possibleMethods.sort((m, om) -> hasWildcard(methodPaths.get(m))-hasWildcard(methodPaths.get(om)));
 
         for (Method method : possibleMethods) {
             String methodPath = methodPaths.get(method);
@@ -180,6 +181,14 @@ public abstract class RestApplication implements HttpHandler {
         }
 
         return null;
+    }
+
+    private int hasWildcard(String s) {
+        String[] fields = parsePath(s);
+        for (String field : fields) {
+            if(field.startsWith("{") && field.endsWith("}")) return 1;
+        }
+        return 0;
     }
 
     private boolean comparePaths(String[] fields, String[] methodFields) {

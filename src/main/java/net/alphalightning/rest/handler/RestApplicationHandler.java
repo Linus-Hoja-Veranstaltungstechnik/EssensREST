@@ -39,7 +39,7 @@ public class RestApplicationHandler {
             // initialise the keystore
             char[] password = KEYSTORE_PASSWORD.toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
-            InputStream fis = RestApplicationHandler.class.getClassLoader().getResourceAsStream("/certificate.jks");
+            InputStream fis = RestApplicationHandler.class.getClassLoader().getResourceAsStream("certificate.jks");
             ks.load(fis, password);
 
             // setup the key manager factory
