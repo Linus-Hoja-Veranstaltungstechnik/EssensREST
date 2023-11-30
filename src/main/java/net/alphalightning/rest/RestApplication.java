@@ -74,6 +74,8 @@ public abstract class RestApplication implements HttpHandler {
 
                 String methodPath = (rootPath + method.getAnnotation(Path.class).value()).replace("//", "/");
 
+                System.out.printf("Method %s#%s loaded for Enpoint %s%n", getClass().getCanonicalName(), method.getName(), methodPath);
+
                 methodPaths.put(method, methodPath);
 
                 List<Method> methodsOfRestMethod = methods.getOrDefault(restMethod, new ArrayList<>());
