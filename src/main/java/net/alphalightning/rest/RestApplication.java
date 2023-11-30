@@ -2,6 +2,9 @@ package net.alphalightning.rest;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.sun.net.httpserver.Authenticator;
+import com.sun.net.httpserver.BasicAuthenticator;
+import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpsExchange;
@@ -10,6 +13,7 @@ import net.alphalightning.rest.annotations.Entity;
 import net.alphalightning.rest.annotations.Path;
 import net.alphalightning.rest.annotations.PathParam;
 import net.alphalightning.rest.annotations.RestApplicationPath;
+import net.alphalightning.rest.auth.ApiKeyAuthenticator;
 import net.alphalightning.rest.handler.RestApplicationHandler;
 import net.alphalightning.rest.util.ParameterUtils;
 
@@ -33,6 +37,8 @@ public abstract class RestApplication implements HttpHandler {
 
     private String rootPath;
 
+    private HttpContext httpContext;
+
     protected RestApplication() {
         methods = new ConcurrentHashMap<>();
         methodPaths = new ConcurrentHashMap<>();
@@ -46,20 +52,22 @@ public abstract class RestApplication implements HttpHandler {
     }
 
     public void init(HttpsServer server) {
-        initApplicationContext(server);
+        httpContext = initApplicationContext(server);
+        httpContext.setAuthenticator(new ApiKeyAuthenticator());
         loadMethods();
     }
 
-    private void initApplicationContext(HttpsServer server) {
+    private HttpContext initApplicationContext(HttpsServer server) {
         RestApplicationPath restApplicationPath = this.getClass().getAnnotation(RestApplicationPath.class);
         if (restApplicationPath == null)
             throw new RuntimeException("RestApplication needs to be annotated with RestApplicationPath.");
 
         rootPath = restApplicationPath.value();
+        System.out.println("\n");
+        System.out.println(this.getClass().getSimpleName() + " : " + rootPath);
+        System.out.println(" ");
 
-        System.out.println(this.getClass().getSimpleName() + " registered for " + rootPath);
-
-        server.createContext(rootPath, this);
+        return server.createContext(rootPath, this);
     }
 
     private void loadMethods() {
@@ -74,7 +82,7 @@ public abstract class RestApplication implements HttpHandler {
 
                 String methodPath = (rootPath + method.getAnnotation(Path.class).value()).replace("//", "/");
 
-                System.out.printf("Method %s#%s loaded for Enpoint %s%n", getClass().getCanonicalName(), method.getName(), methodPath);
+                System.out.printf("%-6s : %-60s --> %s#%s%n", restMethod, methodPath, getClass().getCanonicalName(), method.getName());
 
                 methodPaths.put(method, methodPath);
 
