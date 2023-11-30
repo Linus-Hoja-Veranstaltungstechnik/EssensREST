@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpsExchange;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import net.alphalightning.rest.RestApplication;
+import net.alphalightning.rest.boundary.AlphaRestBoundary;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -49,20 +50,14 @@ public class RestApplicationHandler {
             httpsServer.setExecutor(new ThreadPoolExecutor(4, 8, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100)));
 
             httpsServer.start();
-
-            httpsServer.createContext("/serviceup", ex -> {
-                HttpsExchange sex = (HttpsExchange) ex;
-                System.out.println(sex.getRemoteAddress());
-                sex.sendResponseHeaders(200, SERVICE_RUNNING_RESPONSE.getBytes(StandardCharsets.UTF_8).length);
-                OutputStream os = sex.getResponseBody();
-                os.write(SERVICE_RUNNING_RESPONSE.getBytes(StandardCharsets.UTF_8));
-                os.flush();
-                os.close();
-            });
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException | UnrecoverableKeyException |
                  KeyManagementException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void initDefaultBoundaries() {
+        new AlphaRestBoundary();
     }
 
     private void initSSL()
@@ -107,7 +102,11 @@ public class RestApplicationHandler {
     }
 
     public static RestApplicationHandler getInstance() {
-        return instance == null ? instance = new RestApplicationHandler() : instance;
+        if(instance == null){
+            instance = new RestApplicationHandler();
+            instance.initDefaultBoundaries();
+        }
+        return instance;
     }
 
     public <T extends RestApplication> void registerRestApplication(T restApplication) {
