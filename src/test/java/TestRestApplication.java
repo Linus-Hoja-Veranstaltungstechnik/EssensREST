@@ -49,4 +49,10 @@ public class TestRestApplication extends RestApplication {
         return Response.ok("patch");
     }
 
+    @Path("/add/{value1}/{value2}")
+    @GET
+    public Response add(@PathParam("value1") Double value1, @PathParam("value2") Double value2) {
+        return Response.ok("" + (value1 + value2));
+    }
+
 }

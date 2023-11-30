@@ -11,6 +11,7 @@ import net.alphalightning.rest.annotations.Path;
 import net.alphalightning.rest.annotations.PathParam;
 import net.alphalightning.rest.annotations.RestApplicationPath;
 import net.alphalightning.rest.handler.RestApplicationHandler;
+import net.alphalightning.rest.util.ParameterUtils;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -141,10 +142,8 @@ public abstract class RestApplication implements HttpHandler {
             for (int i = 0; i < parameters.length; i++) {
                 Parameter parameter = parameters[i];
                 if (parameter.isAnnotationPresent(PathParam.class)) {
-                    if (parameter.getType() != String.class)
-                        throw new RuntimeException("PathParameter needs to be a String. Parsing should be implemented by the called method.");
                     String paramId = parameter.getAnnotation(PathParam.class).value();
-                    injectedParams[i] = pathParams.getOrDefault(paramId, null);
+                    injectedParams[i] = ParameterUtils.transformObject(pathParams.getOrDefault(paramId, null), parameter.getType());
                     continue;
                 } else if (parameter.isAnnotationPresent(Entity.class)) {
                     Object o = gson.fromJson(entity, parameter.getType());
@@ -170,7 +169,7 @@ public abstract class RestApplication implements HttpHandler {
         String[] fields = parsePath(requestedPath);
         int fieldCount = fields.length;
         List<Method> possibleMethods = methods.get(requestMethod);
-        possibleMethods.sort((m, om) -> hasWildcard(methodPaths.get(m))-hasWildcard(methodPaths.get(om)));
+        possibleMethods.sort((m, om) -> paramCount(methodPaths.get(m)) - paramCount(methodPaths.get(om)));
 
         for (Method method : possibleMethods) {
             String methodPath = methodPaths.get(method);
@@ -183,12 +182,15 @@ public abstract class RestApplication implements HttpHandler {
         return null;
     }
 
-    private int hasWildcard(String s) {
+    private int paramCount(String s) {
         String[] fields = parsePath(s);
+
+        int count = 0;
+
         for (String field : fields) {
-            if(field.startsWith("{") && field.endsWith("}")) return 1;
+            if(field.startsWith("{") && field.endsWith("}")) count++;
         }
-        return 0;
+        return count;
     }
 
     private boolean comparePaths(String[] fields, String[] methodFields) {

@@ -6,13 +6,21 @@ import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import net.alphalightning.rest.RestApplication;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,6 +29,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class RestApplicationHandler {
+
     private static final String KEYSTORE_PASSWORD = "9aDnh2cCh7wLUt9Kv2s4";
     private static final String SERVICE_RUNNING_RESPONSE = "Service Running";
 
@@ -34,43 +43,8 @@ public class RestApplicationHandler {
         restApplications = new LinkedList<>();
         try {
             httpsServer = HttpsServer.create(new InetSocketAddress(8000), 10);
-            SSLContext sslContext = SSLContext.getInstance("TLS");
 
-            // initialise the keystore
-            char[] password = KEYSTORE_PASSWORD.toCharArray();
-            KeyStore ks = KeyStore.getInstance("JKS");
-            InputStream fis = RestApplicationHandler.class.getClassLoader().getResourceAsStream("certificate.jks");
-            ks.load(fis, password);
-
-            // setup the key manager factory
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, password);
-
-            // setup the trust manager factory
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-            tmf.init(ks);
-
-            // setup the HTTPS context and parameters
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-            httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
-                public void configure(HttpsParameters params) {
-                    try {
-                        // initialise the SSL context
-                        SSLContext context = getSSLContext();
-                        SSLEngine engine = context.createSSLEngine();
-                        params.setNeedClientAuth(false);
-                        params.setCipherSuites(engine.getEnabledCipherSuites());
-                        params.setProtocols(engine.getEnabledProtocols());
-
-                        // Set the SSL parameters
-                        SSLParameters sslParameters = context.getSupportedSSLParameters();
-                        params.setSSLParameters(sslParameters);
-
-                    } catch (Exception ex) {
-                        System.out.println("Failed to create HTTPS port");
-                    }
-                }
-            });
+            initSSL();
 
             httpsServer.setExecutor(new ThreadPoolExecutor(4, 8, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100)));
 
@@ -85,10 +59,51 @@ public class RestApplicationHandler {
                 os.flush();
                 os.close();
             });
-        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException |
-                 UnrecoverableKeyException | KeyManagementException e) {
+        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException | UnrecoverableKeyException |
+                 KeyManagementException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void initSSL()
+            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException, KeyManagementException {
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+
+        // initialise the keystore
+        char[] password = KEYSTORE_PASSWORD.toCharArray();
+        KeyStore ks = KeyStore.getInstance("JKS");
+        InputStream fis = RestApplicationHandler.class.getClassLoader().getResourceAsStream("certificate.jks");
+        ks.load(fis, password);
+
+        // setup the key manager factory
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, password);
+
+        // setup the trust manager factory
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ks);
+
+        // setup the HTTPS context and parameters
+        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+            public void configure(HttpsParameters params) {
+                try {
+                    // initialise the SSL context
+                    SSLContext context = getSSLContext();
+                    SSLEngine engine = context.createSSLEngine();
+                    params.setNeedClientAuth(false);
+                    params.setCipherSuites(engine.getEnabledCipherSuites());
+                    params.setProtocols(engine.getEnabledProtocols());
+
+                    // Set the SSL parameters
+                    SSLParameters sslParameters = context.getSupportedSSLParameters();
+                    params.setSSLParameters(sslParameters);
+
+                } catch (Exception ex) {
+                    System.out.println("Failed to create HTTPS port");
+                }
+            }
+        });
     }
 
     public static RestApplicationHandler getInstance() {
