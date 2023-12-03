@@ -4,16 +4,13 @@ import com.sun.net.httpserver.Authenticator;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
+import net.alphalightning.rest.RestMethod;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Objects;
 
 public abstract class SingleValueAuthenticator extends Authenticator {
     protected final String realm;
-    private final Charset charset;
-    private final boolean isUTF8;
 
     public SingleValueAuthenticator(String realm) {
         this(realm, Charset.defaultCharset());
@@ -25,33 +22,22 @@ public abstract class SingleValueAuthenticator extends Authenticator {
             throw new IllegalArgumentException("realm must not be empty");
         } else {
             this.realm = realm;
-            this.charset = charset;
-            this.isUTF8 = charset.equals(StandardCharsets.UTF_8);
         }
-    }
-
-    public String getRealm() {
-        return this.realm;
     }
 
     public Authenticator.Result authenticate(HttpExchange t) {
         Headers rmap = t.getRequestHeaders();
+        RestMethod method = RestMethod.valueOf(t.getRequestMethod());
         String auth = rmap.getFirst("Authorization");
+        String restPath = t.getRequestURI().getPath();
         if (auth == null) {
             this.setAuthHeader(t);
             return new Authenticator.Retry(401);
         } else {
-            int sp = auth.indexOf(32);
-            if (sp != -1 && auth.substring(0, sp).equals("Basic")) {
-                byte[] b = Base64.getDecoder().decode(auth.substring(sp + 1));
-                String value = new String(b, this.charset);
-                if (this.checkValue(value)) {
-                    return new Authenticator.Success(new HttpPrincipal(value, this.realm));
-                } else {
-                    this.setAuthHeader(t);
-                    return new Authenticator.Failure(401);
-                }
+            if (this.checkValue(auth, method, restPath)) {
+                return new Authenticator.Success(new HttpPrincipal(auth, this.realm));
             } else {
+                this.setAuthHeader(t);
                 return new Authenticator.Failure(401);
             }
         }
@@ -59,9 +45,9 @@ public abstract class SingleValueAuthenticator extends Authenticator {
 
     private void setAuthHeader(HttpExchange t) {
         Headers map = t.getResponseHeaders();
-        String authString = "Basic realm=\"" + this.realm + "\"" + (this.isUTF8 ? ", charset=\"UTF-8\"" : "");
+        String authString = "Basic realm=\"" + this.realm + "\"";
         map.set("WWW-Authenticate", authString);
     }
 
-    protected abstract boolean checkValue(String value);
+    protected abstract boolean checkValue(String value, RestMethod method, String appName);
 }

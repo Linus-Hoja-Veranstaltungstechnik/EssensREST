@@ -1,5 +1,6 @@
 import net.alphalightning.rest.Response;
 import net.alphalightning.rest.RestApplication;
+import net.alphalightning.rest.RestMethod;
 import net.alphalightning.rest.annotations.*;
 
 @RestApplicationPath("/alpharest/test")
@@ -53,6 +54,12 @@ public class TestRestApplication extends RestApplication {
     @GET
     public Response add(@PathParam("value1") Double value1, @PathParam("value2") Double value2) {
         return Response.ok("" + (value1 + value2));
+    }
+
+    @Path("/enum/{enum}")
+    @GET
+    public Response add(@PathParam("enum") RestMethod restMethod) {
+        return Response.ok("" + restMethod.getAnnotation().toString());
     }
 
 }

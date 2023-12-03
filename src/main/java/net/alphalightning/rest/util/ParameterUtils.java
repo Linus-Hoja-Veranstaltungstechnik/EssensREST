@@ -13,12 +13,15 @@ public class ParameterUtils {
             result = (T) Integer.valueOf(value);
         } else if(type.isAssignableFrom(Double.class)){
             result = (T) Double.valueOf(value);
-        } else if(type.isAssignableFrom(Boolean.class)){
+        } else if (type.isAssignableFrom(Boolean.class)) {
             result = (T) Boolean.valueOf(value);
-        } else if(type.isAssignableFrom(Long.class)){
+        } else if (type.isAssignableFrom(Long.class)) {
             result = (T) Long.valueOf(value);
-        } else if(type.isAssignableFrom(Float.class)){
+        } else if (type.isAssignableFrom(Float.class)) {
             result = (T) Float.valueOf(value);
+        } else if (type.isEnum()) {
+            Class<? extends Enum> enumType = (Class<? extends Enum>) type;
+            result = (T) Enum.valueOf(enumType, value.toUpperCase());
         } else {
             try {
                 result = (T) value;
