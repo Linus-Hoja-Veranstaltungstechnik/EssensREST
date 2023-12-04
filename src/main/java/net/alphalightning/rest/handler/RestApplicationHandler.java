@@ -1,27 +1,16 @@
 package net.alphalightning.rest.handler;
 
 import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsExchange;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import net.alphalightning.rest.RestApplication;
 import net.alphalightning.rest.boundary.AlphaRestBoundary;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 public class RestApplicationHandler {
 
     private static final String KEYSTORE_PASSWORD = "9aDnh2cCh7wLUt9Kv2s4";
-    private static final String SERVICE_RUNNING_RESPONSE = "Service Running";
 
     private static RestApplicationHandler instance;
 
@@ -42,6 +30,7 @@ public class RestApplicationHandler {
 
     private RestApplicationHandler() {
         restApplications = new LinkedList<>();
+        initApiKeyHandler();
         try {
             httpsServer = HttpsServer.create(new InetSocketAddress(8000), 10);
 
@@ -50,10 +39,15 @@ public class RestApplicationHandler {
             httpsServer.setExecutor(new ThreadPoolExecutor(4, 8, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100)));
 
             httpsServer.start();
-        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException | UnrecoverableKeyException |
+        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException |
+                 UnrecoverableKeyException |
                  KeyManagementException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void initApiKeyHandler() {
+        ApiKeyHandler.getInstance();
     }
 
     private void initDefaultBoundaries() {

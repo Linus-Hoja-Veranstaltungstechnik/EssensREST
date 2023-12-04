@@ -12,10 +12,14 @@ public class ApiKeyAuthenticator extends SingleValueAuthenticator {
 
     @Override
     protected boolean checkValue(String value, RestMethod method, String path) {
-        if (ApiKeyHandler.getInstance().apiKeyPresent(value)) {
-            String appName = ApiKeyHandler.getInstance().getAppName(value);
-            ApiKeyHandler.getInstance().calledMethod(method, path, appName);
-            return true;
+        try {
+            if (ApiKeyHandler.getInstance().apiKeyPresent(value)) {
+                String appName = ApiKeyHandler.getInstance().getAppName(value);
+                ApiKeyHandler.getInstance().calledMethod(method, path, appName);
+                return true;
+            }
+        } catch (Exception e){
+            e.printStackTrace();
         }
         return false;
     }
