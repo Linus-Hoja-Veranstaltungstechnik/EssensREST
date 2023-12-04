@@ -50,6 +50,16 @@ public class Response {
         return result;
     }
 
+    public static Response error(int code){
+        return new Response(code);
+    }
+
+    public static Response error(int code, String entity){
+        Response result = new Response(code);
+        result.entity = entity;
+        return result;
+    }
+
     public static Response serverError() {
         Response result = new Response(SERVER_ERROR_RESPONSE);
         result.entity = SERVER_ERROR_RESPONSE_MESSAGE;
