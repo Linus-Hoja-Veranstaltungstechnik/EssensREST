@@ -1,10 +1,10 @@
-package net.alphalightning.rest.handler;
+package net.alphalightning.rest.server.handler;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.alphalightning.rest.RestMethod;
-import net.alphalightning.rest.auth.ApiKey;
-import net.alphalightning.rest.util.ApiKeyUtils;
+import net.alphalightning.rest.server.RestMethod;
+import net.alphalightning.rest.shared.auth.ApiKey;
+import net.alphalightning.rest.server.util.ApiKeyUtils;
 
 import java.io.File;
 import java.io.FileReader;

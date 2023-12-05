@@ -1,7 +1,8 @@
 import net.alphalightning.rest.Response;
-import net.alphalightning.rest.RestApplication;
-import net.alphalightning.rest.RestMethod;
-import net.alphalightning.rest.annotations.*;
+import net.alphalightning.rest.server.RestApplication;
+import net.alphalightning.rest.server.RestMethod;
+import net.alphalightning.rest.server.annotations.RestApplicationPath;
+import net.alphalightning.rest.shared.annotations.*;
 
 @RestApplicationPath("/alpharest/test")
 @SuppressWarnings("unused")

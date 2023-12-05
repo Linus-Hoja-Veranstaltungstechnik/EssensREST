@@ -1,7 +1,7 @@
-package net.alphalightning.rest.auth;
+package net.alphalightning.rest.server.auth;
 
-import net.alphalightning.rest.RestMethod;
-import net.alphalightning.rest.handler.ApiKeyHandler;
+import net.alphalightning.rest.server.RestMethod;
+import net.alphalightning.rest.server.handler.ApiKeyHandler;
 
 public class ApiKeyAuthenticator extends SingleValueAuthenticator {
     private static final String REALM = "apikey";

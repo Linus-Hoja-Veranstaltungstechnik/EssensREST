@@ -1,10 +1,11 @@
-package net.alphalightning.rest.boundary;
+package net.alphalightning.rest.server.boundary;
 
 import net.alphalightning.rest.Response;
-import net.alphalightning.rest.RestApplication;
-import net.alphalightning.rest.RestMethod;
-import net.alphalightning.rest.annotations.*;
-import net.alphalightning.rest.handler.ApiKeyHandler;
+import net.alphalightning.rest.server.RestApplication;
+import net.alphalightning.rest.server.RestMethod;
+import net.alphalightning.rest.server.annotations.RestApplicationPath;
+import net.alphalightning.rest.server.handler.ApiKeyHandler;
+import net.alphalightning.rest.shared.annotations.*;
 
 @RestApplicationPath("/alpharest")
 @SuppressWarnings("unused") // rest api

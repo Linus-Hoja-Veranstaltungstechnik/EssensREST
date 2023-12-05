@@ -1,21 +1,20 @@
-package net.alphalightning.rest;
+package net.alphalightning.rest.server;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.sun.net.httpserver.Authenticator;
-import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpsExchange;
 import com.sun.net.httpserver.HttpsServer;
-import net.alphalightning.rest.annotations.Entity;
-import net.alphalightning.rest.annotations.Path;
-import net.alphalightning.rest.annotations.PathParam;
-import net.alphalightning.rest.annotations.RestApplicationPath;
-import net.alphalightning.rest.auth.ApiKeyAuthenticator;
-import net.alphalightning.rest.handler.RestApplicationHandler;
-import net.alphalightning.rest.util.ParameterUtils;
+import net.alphalightning.rest.Response;
+import net.alphalightning.rest.shared.annotations.Entity;
+import net.alphalightning.rest.shared.annotations.Path;
+import net.alphalightning.rest.shared.annotations.PathParam;
+import net.alphalightning.rest.server.annotations.RestApplicationPath;
+import net.alphalightning.rest.server.auth.ApiKeyAuthenticator;
+import net.alphalightning.rest.server.handler.RestApplicationHandler;
+import net.alphalightning.rest.server.util.ParameterUtils;
 
 import java.io.*;
 import java.lang.annotation.Annotation;

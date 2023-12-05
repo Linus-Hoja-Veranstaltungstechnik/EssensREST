@@ -1,6 +1,6 @@
-package net.alphalightning.rest.util;
+package net.alphalightning.rest.server.util;
 
-import net.alphalightning.rest.auth.ApiKey;
+import net.alphalightning.rest.shared.auth.ApiKey;
 
 import java.util.Random;
 

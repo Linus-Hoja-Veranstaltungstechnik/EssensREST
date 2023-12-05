@@ -1,10 +1,10 @@
-package net.alphalightning.rest.auth;
+package net.alphalightning.rest.server.auth;
 
 import com.sun.net.httpserver.Authenticator;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
-import net.alphalightning.rest.RestMethod;
+import net.alphalightning.rest.server.RestMethod;
 
 import java.nio.charset.Charset;
 import java.util.Objects;

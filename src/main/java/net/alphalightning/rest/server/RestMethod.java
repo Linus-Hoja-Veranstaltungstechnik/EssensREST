@@ -1,10 +1,10 @@
-package net.alphalightning.rest;
+package net.alphalightning.rest.server;
 
-import net.alphalightning.rest.annotations.GET;
-import net.alphalightning.rest.annotations.POST;
-import net.alphalightning.rest.annotations.PUT;
-import net.alphalightning.rest.annotations.PATCH;
-import net.alphalightning.rest.annotations.DELETE;
+import net.alphalightning.rest.shared.annotations.GET;
+import net.alphalightning.rest.shared.annotations.POST;
+import net.alphalightning.rest.shared.annotations.PUT;
+import net.alphalightning.rest.shared.annotations.PATCH;
+import net.alphalightning.rest.shared.annotations.DELETE;
 
 import java.lang.annotation.Annotation;
 

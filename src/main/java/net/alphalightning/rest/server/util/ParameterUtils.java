@@ -1,4 +1,4 @@
-package net.alphalightning.rest.util;
+package net.alphalightning.rest.server.util;
 
 public class ParameterUtils {
 

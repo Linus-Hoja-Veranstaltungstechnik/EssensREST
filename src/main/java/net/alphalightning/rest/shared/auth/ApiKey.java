@@ -1,7 +1,7 @@
-package net.alphalightning.rest.auth;
+package net.alphalightning.rest.shared.auth;
 
-import net.alphalightning.rest.RestMethod;
-import net.alphalightning.rest.handler.ApiKeyHandler;
+import net.alphalightning.rest.server.RestMethod;
+import net.alphalightning.rest.server.handler.ApiKeyHandler;
 
 import java.util.HashMap;
 import java.util.Map;

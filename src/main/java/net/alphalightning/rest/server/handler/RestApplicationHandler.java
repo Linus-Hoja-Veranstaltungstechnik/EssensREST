@@ -1,10 +1,10 @@
-package net.alphalightning.rest.handler;
+package net.alphalightning.rest.server.handler;
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
-import net.alphalightning.rest.RestApplication;
-import net.alphalightning.rest.boundary.AlphaRestBoundary;
+import net.alphalightning.rest.server.RestApplication;
+import net.alphalightning.rest.server.boundary.AlphaRestBoundary;
 
 import javax.net.ssl.*;
 import java.io.IOException;
