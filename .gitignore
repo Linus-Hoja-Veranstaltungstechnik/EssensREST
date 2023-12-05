@@ -25,3 +25,9 @@ buildNumber.properties
 *.iml
 .idea/*
 !.idea/icon.png
+
+# # # # #
+# Project specific stuff
+# # # # #
+/apikeys.json
+/callstacks.json
