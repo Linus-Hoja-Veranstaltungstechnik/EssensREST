@@ -29,5 +29,4 @@ buildNumber.properties
 # # # # #
 # Project specific stuff
 # # # # #
-/apikeys.json
-/callstacks.json
+alpharest/*

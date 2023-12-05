@@ -17,8 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ApiKeyHandler {
 
-    private static final File APIKEY_FILE = new File("apikeys.json");
-    private static final File CALLSTACK_FILE = new File("callstacks.json");
+    private static final File APIKEY_FILE = new File("alpharest/apikeys.json");
+    private static final File CALLSTACK_FILE = new File("alpharest/callstacks.json");
 
     private static ApiKeyHandler instance;
 
@@ -107,6 +107,7 @@ public class ApiKeyHandler {
     private void storeApiKeysToLocalStorage() {
         try {
             if (!APIKEY_FILE.exists()) {
+                APIKEY_FILE.mkdirs();
                 APIKEY_FILE.createNewFile();
             }
         } catch (IOException e) {
@@ -163,6 +164,7 @@ public class ApiKeyHandler {
     private void storeCallStacks() {
         try {
             if (!CALLSTACK_FILE.exists()) {
+                CALLSTACK_FILE.mkdirs();
                 CALLSTACK_FILE.createNewFile();
             }
         } catch (IOException e) {
