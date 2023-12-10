@@ -5,10 +5,7 @@ import com.google.gson.GsonBuilder;
 import net.alphalightning.rest.server.RestApplication;
 import net.alphalightning.rest.server.RestMethod;
 import net.alphalightning.rest.server.annotations.RestApplicationPath;
-import net.alphalightning.rest.server.swagger.annotations.SwaggerDescription;
-import net.alphalightning.rest.server.swagger.annotations.SwaggerParameter;
-import net.alphalightning.rest.server.swagger.annotations.SwaggerResponse;
-import net.alphalightning.rest.server.swagger.annotations.SwaggerTitle;
+import net.alphalightning.rest.server.swagger.annotations.*;
 import net.alphalightning.rest.server.swagger.objects.*;
 import net.alphalightning.rest.shared.annotations.Path;
 import net.alphalightning.rest.shared.annotations.PathParam;
@@ -88,7 +85,7 @@ public class SwaggerGenerator {
         List<SwaggerRestResponse> responses = new LinkedList<>();
 
         if (method.isAnnotationPresent(SwaggerResponse.class)) {
-            for (SwaggerResponse responseAnnotation : method.getAnnotationsByType(SwaggerResponse.class)) {
+            for (SwaggerResponse responseAnnotation : method.getAnnotation(SwaggerResponses.class).value()) {
                 SwaggerRestResponse response = new SwaggerRestResponse(responseAnnotation.code());
                 response.withDescription(responseAnnotation.description());
                 responses.add(response);
