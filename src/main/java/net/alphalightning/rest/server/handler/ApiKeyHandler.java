@@ -3,8 +3,8 @@ package net.alphalightning.rest.server.handler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.alphalightning.rest.server.RestMethod;
-import net.alphalightning.rest.shared.auth.ApiKey;
 import net.alphalightning.rest.server.util.ApiKeyUtils;
+import net.alphalightning.rest.shared.auth.ApiKey;
 
 import java.io.File;
 import java.io.FileReader;
@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("unused")
 public class ApiKeyHandler {
 
     private static final File APIKEY_FILE = new File("alpharest/apikeys.json");
@@ -107,7 +108,7 @@ public class ApiKeyHandler {
     private void storeApiKeysToLocalStorage() {
         try {
             if (!APIKEY_FILE.exists()) {
-                APIKEY_FILE.mkdirs();
+                APIKEY_FILE.getParentFile().mkdirs();
                 APIKEY_FILE.createNewFile();
             }
         } catch (IOException e) {
@@ -164,7 +165,7 @@ public class ApiKeyHandler {
     private void storeCallStacks() {
         try {
             if (!CALLSTACK_FILE.exists()) {
-                CALLSTACK_FILE.mkdirs();
+                CALLSTACK_FILE.getParentFile().mkdirs();
                 CALLSTACK_FILE.createNewFile();
             }
         } catch (IOException e) {

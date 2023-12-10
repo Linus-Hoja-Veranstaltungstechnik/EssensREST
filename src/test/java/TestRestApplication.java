@@ -60,7 +60,7 @@ public class TestRestApplication extends RestApplication {
     @Path("/enum/{enum}")
     @GET
     public Response add(@PathParam("enum") RestMethod restMethod) {
-        return Response.ok("" + restMethod.getAnnotation().toString());
+        return Response.ok().entity(restMethod);
     }
 
 }

@@ -5,9 +5,10 @@ import net.alphalightning.rest.server.handler.ApiKeyHandler;
 
 public class ApiKeyAuthenticator extends SingleValueAuthenticator {
     private static final String REALM = "apikey";
+    private static final String HEADER_NAME = "X-API-Key";
 
     public ApiKeyAuthenticator() {
-        super(REALM);
+        super(REALM, HEADER_NAME);
     }
 
     @Override

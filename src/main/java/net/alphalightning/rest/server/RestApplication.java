@@ -2,19 +2,18 @@ package net.alphalightning.rest.server;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpsExchange;
-import com.sun.net.httpserver.HttpsServer;
+import com.sun.net.httpserver.*;
 import net.alphalightning.rest.Response;
-import net.alphalightning.rest.shared.annotations.Entity;
-import net.alphalightning.rest.shared.annotations.Path;
-import net.alphalightning.rest.shared.annotations.PathParam;
 import net.alphalightning.rest.server.annotations.RestApplicationPath;
 import net.alphalightning.rest.server.auth.ApiKeyAuthenticator;
 import net.alphalightning.rest.server.handler.RestApplicationHandler;
+import net.alphalightning.rest.server.handler.SwaggerUiHandler;
+import net.alphalightning.rest.server.swagger.SwaggerGenerator;
 import net.alphalightning.rest.server.util.ParameterUtils;
+import net.alphalightning.rest.shared.annotations.Entity;
+import net.alphalightning.rest.shared.annotations.Path;
+import net.alphalightning.rest.shared.annotations.PathParam;
+import net.alphalightning.rest.shared.annotations.RestServerInfo;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -27,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public abstract class RestApplication implements HttpHandler {
+public abstract class RestApplication {
 
     private final ConcurrentHashMap<RestMethod, List<Method>> methods;
     private final ConcurrentHashMap<Method, String> methodPaths;
@@ -36,7 +35,12 @@ public abstract class RestApplication implements HttpHandler {
 
     private String rootPath;
 
+    private int httpPort = 88;
+    private int httpsPort = 8888;
+    private String host = "localhost";
+
     private HttpContext httpContext;
+    private HttpContext httpsContext;
 
     protected RestApplication() {
         methods = new ConcurrentHashMap<>();
@@ -47,26 +51,41 @@ public abstract class RestApplication implements HttpHandler {
 
         gson = builder.create();
 
+        fetchServerInfo();
+
         RestApplicationHandler.getInstance().registerRestApplication(this);
     }
 
-    public void init(HttpsServer server) {
-        httpContext = initApplicationContext(server);
+    private void fetchServerInfo() {
+        RestServerInfo info = this.getClass().getAnnotation(RestServerInfo.class);
+        if (info == null) return;
+        httpPort = info.httpPort() != 0 ? info.httpPort() : httpPort;
+        httpsPort = info.httpsPort() != 0 ? info.httpsPort() : httpsPort;
+        host = info.host() != null && !info.host().isEmpty() && !info.host().isBlank() ? info.host() : host;
+    }
+
+    public void init(HttpsServer httpsServer, HttpServer httpServer) {
+        httpContext = initApplicationContext(httpServer);
         httpContext.setAuthenticator(new ApiKeyAuthenticator());
+        httpsContext = initApplicationContext(httpsServer);
+        httpsContext.setAuthenticator(new ApiKeyAuthenticator());
         loadMethods();
     }
 
-    private HttpContext initApplicationContext(HttpsServer server) {
+    private HttpContext initApplicationContext(HttpServer server) {
         RestApplicationPath restApplicationPath = this.getClass().getAnnotation(RestApplicationPath.class);
         if (restApplicationPath == null)
             throw new RuntimeException("RestApplication needs to be annotated with RestApplicationPath.");
 
         rootPath = restApplicationPath.value();
         System.out.println("\n");
-        System.out.println(this.getClass().getSimpleName() + " : " + rootPath);
+        System.out.println((server instanceof HttpsServer ? "HTTPS : " : "HTTP  : ") + this.getClass().getSimpleName() + " : " + rootPath);
         System.out.println(" ");
 
-        return server.createContext(rootPath, this);
+        SwaggerGenerator swaggerGenerator = new SwaggerGenerator(this);
+        File swaggerFile = swaggerGenerator.generate();
+        SwaggerUiHandler.register(rootPath, swaggerFile, server);
+        return server.createContext(rootPath, server instanceof HttpsServer ? new HttpsExchangeHandler() : new HttpExchangeHandler());
     }
 
     private void loadMethods() {
@@ -92,30 +111,12 @@ public abstract class RestApplication implements HttpHandler {
         }
     }
 
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        HttpsExchange httpsExchange = (HttpsExchange) exchange;
+    public int getHttpPort() {
+        return httpPort;
+    }
 
-        System.out.println("Handling connection from " + httpsExchange.getRemoteAddress());
-        System.out.println("Handling endpoint " + httpsExchange.getRequestURI().getPath());
-
-        RestMethod requestMethod = RestMethod.valueOf(httpsExchange.getRequestMethod());
-        URI requestURI = httpsExchange.getRequestURI();
-
-        Method method = resolveMethod(requestMethod, requestURI.getPath());
-        Response response;
-
-        try {
-            response = method != null ? callMethod(method, preparePathParams(method, requestURI.getPath()), readBody(httpsExchange.getRequestBody())) : Response.clientError("Method not Found.");
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            response = Response.serverError("Could not execute method.");
-        }
-
-        httpsExchange.sendResponseHeaders(response.getResponseCode(), response.getEntity().getBytes(StandardCharsets.UTF_8).length);
-        OutputStream os = httpsExchange.getResponseBody();
-        os.write(response.getEntity().getBytes(StandardCharsets.UTF_8));
-        os.flush();
-        os.close();
+    public int getHttpsPort() {
+        return httpsPort;
     }
 
     private String readBody(InputStream is) {
@@ -218,5 +219,71 @@ public abstract class RestApplication implements HttpHandler {
 
     private String[] parsePath(String path) {
         return Arrays.stream(path.split("/")).filter(s -> !s.isEmpty()).toArray(String[]::new);
+    }
+
+    public boolean hasPath(RestMethod restMethod, String path) {
+        return resolveMethod(restMethod, path) != null;
+    }
+
+    private class HttpExchangeHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange httpExchange) throws IOException {
+            Headers headers = httpExchange.getRequestHeaders();
+            String accept = headers.getFirst("accept");
+            if (!accept.equals("application/json")) return;
+
+            System.out.println("Handling connection from " + httpExchange.getRemoteAddress());
+            System.out.println("Handling endpoint " + httpExchange.getRequestURI().getPath());
+
+            RestMethod requestMethod = RestMethod.valueOf(httpExchange.getRequestMethod());
+            URI requestURI = httpExchange.getRequestURI();
+
+            Method method = resolveMethod(requestMethod, requestURI.getPath());
+            Response response;
+
+            try {
+                response = method != null ? callMethod(method, preparePathParams(method, requestURI.getPath()), readBody(httpExchange.getRequestBody())) : Response.clientError("Method not Found.");
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                response = Response.serverError("Could not execute method.");
+            }
+
+            httpExchange.sendResponseHeaders(response.getResponseCode(), response.getEntity().getBytes(StandardCharsets.UTF_8).length);
+            OutputStream os = httpExchange.getResponseBody();
+            os.write(response.getEntity().getBytes(StandardCharsets.UTF_8));
+            os.flush();
+            os.close();
+        }
+    }
+
+    private class HttpsExchangeHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            HttpsExchange httpsExchange = (HttpsExchange) exchange;
+
+            Headers headers = httpsExchange.getRequestHeaders();
+            String accept = headers.getFirst("accept");
+            if (!accept.equals("application/json")) return;
+
+            System.out.println("Handling connection from " + httpsExchange.getRemoteAddress());
+            System.out.println("Handling endpoint " + httpsExchange.getRequestURI().getPath());
+
+            RestMethod requestMethod = RestMethod.valueOf(httpsExchange.getRequestMethod());
+            URI requestURI = httpsExchange.getRequestURI();
+
+            Method method = resolveMethod(requestMethod, requestURI.getPath());
+            Response response;
+
+            try {
+                response = method != null ? callMethod(method, preparePathParams(method, requestURI.getPath()), readBody(httpsExchange.getRequestBody())) : Response.clientError("Method not Found.");
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                response = Response.serverError("Could not execute method.");
+            }
+
+            httpsExchange.sendResponseHeaders(response.getResponseCode(), response.getEntity().getBytes(StandardCharsets.UTF_8).length);
+            OutputStream os = httpsExchange.getResponseBody();
+            os.write(response.getEntity().getBytes(StandardCharsets.UTF_8));
+            os.flush();
+            os.close();
+        }
     }
 }
