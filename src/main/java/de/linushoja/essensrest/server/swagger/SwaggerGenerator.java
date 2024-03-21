@@ -8,10 +8,7 @@ import de.linushoja.essensrest.server.swagger.objects.*;
 import de.linushoja.essensrest.server.RestMethod;
 import de.linushoja.essensrest.server.annotations.RestApplicationPath;
 import de.linushoja.essensrest.shared.annotations.*;
-import net.alphalightning.rest.server.swagger.annotations.*;
-import net.alphalightning.rest.server.swagger.objects.*;
 import de.linushoja.essensrest.shared.InType;
-import net.alphalightning.rest.shared.annotations.*;
 import de.linushoja.essensrest.shared.auth.AuthorizationType;
 
 import java.io.File;

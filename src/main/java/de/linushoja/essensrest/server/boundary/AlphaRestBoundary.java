@@ -7,8 +7,6 @@ import de.linushoja.essensrest.server.annotations.RestApplicationPath;
 import de.linushoja.essensrest.server.handler.ApiKeyHandler;
 import de.linushoja.essensrest.server.swagger.annotations.*;
 import de.linushoja.essensrest.shared.annotations.*;
-import net.alphalightning.rest.server.swagger.annotations.*;
-import net.alphalightning.rest.shared.annotations.*;
 
 @RestApplicationPath("/alpharest")
 @SwaggerTitle("AlphaREST")
