@@ -10,6 +10,7 @@ public class Response {
     public static final String SERVER_ERROR_RESPONSE_MESSAGE = "Server Error";
     public static final int CLIENT_ERROR_RESPONSE = 400;
     public static final String CLIENT_ERROR_RESPONSE_MESSAGE = "Client Error";
+    public static final String CLIENT_ERROR_WRONG_ACCEPT_MESSAGE = "Wrong or empty accept value!";
 
     private final int responseCode;
 

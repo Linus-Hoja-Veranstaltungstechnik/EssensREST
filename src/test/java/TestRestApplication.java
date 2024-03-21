@@ -2,6 +2,7 @@ import net.alphalightning.rest.Response;
 import net.alphalightning.rest.server.RestApplication;
 import net.alphalightning.rest.server.RestMethod;
 import net.alphalightning.rest.server.annotations.RestApplicationPath;
+import net.alphalightning.rest.server.swagger.annotations.SwaggerExample;
 import net.alphalightning.rest.shared.annotations.*;
 
 @RestApplicationPath("/alpharest/test")
@@ -22,7 +23,7 @@ public class TestRestApplication extends RestApplication {
 
     @Path("/put/{id}")
     @PUT
-    public Response put(@PathParam("id") String id, @Entity() Hund hund) {
+    public Response put(@PathParam("id") String id, @Entity(name = "hund") @SwaggerExample("{\n  \"name\": \"Bello\",\n  \"age\": 3\n}") Hund hund) {
         HundeService.put(id, hund);
         return Response.ok("Hund gespeichert.");
     }
@@ -43,12 +44,6 @@ public class TestRestApplication extends RestApplication {
     @DELETE
     public Response delete() {
         return Response.ok("delete");
-    }
-
-    @Path("/patch")
-    @PATCH
-    public Response patch() {
-        return Response.ok("patch");
     }
 
     @Path("/add/{value1}/{value2}")

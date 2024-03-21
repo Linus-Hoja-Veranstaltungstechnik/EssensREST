@@ -90,6 +90,7 @@ public abstract class RestApplication {
 
     private void loadMethods() {
         for (Method method : this.getClass().getMethods()) {
+            method.setAccessible(true);
             RestMethod restMethod = null;
             for (Annotation annotation : method.getDeclaredAnnotations()) {
                 restMethod = RestMethod.getMethodByAnnotation(annotation.annotationType());
@@ -156,7 +157,7 @@ public abstract class RestApplication {
                     injectedParams[i] = ParameterUtils.transformObject(pathParams.getOrDefault(paramId, null), parameter.getType());
                     continue;
                 } else if (parameter.isAnnotationPresent(Entity.class)) {
-                    Object o = gson.fromJson(entity, parameter.getType());
+                    Object o = entity.startsWith("{") && !parameter.getType().isAssignableFrom(String.class) ? gson.fromJson(entity, parameter.getType()) : entity;
                     injectedParams[i] = o;
                     continue;
                 }
@@ -185,7 +186,9 @@ public abstract class RestApplication {
             String methodPath = methodPaths.get(method);
             String[] methodFields = parsePath(methodPath);
             if (fieldCount == methodFields.length) {
-                if (comparePaths(fields, methodFields)) return method;
+                if (comparePaths(fields, methodFields)) {
+                    return method;
+                }
             }
         }
 
@@ -228,12 +231,22 @@ public abstract class RestApplication {
     private class HttpExchangeHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange httpExchange) throws IOException {
+            System.out.println("Handling HTTPS connection from " + httpExchange.getRemoteAddress());
+            System.out.println("Handling endpoint " + httpExchange.getRequestURI().getPath());
+
             Headers headers = httpExchange.getRequestHeaders();
             String accept = headers.getFirst("accept");
-            if (!accept.equals("application/json")) return;
+            accept = accept == null ? headers.getFirst("accepts") : accept;
+            accept = accept == null ? "" : accept;
 
-            System.out.println("Handling connection from " + httpExchange.getRemoteAddress());
-            System.out.println("Handling endpoint " + httpExchange.getRequestURI().getPath());
+            if (!accept.equals("application/json")) {
+                httpExchange.sendResponseHeaders(Response.CLIENT_ERROR_RESPONSE, Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE.getBytes(StandardCharsets.UTF_8).length);
+                OutputStream os = httpExchange.getResponseBody();
+                os.write(Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE.getBytes(StandardCharsets.UTF_8));
+                os.flush();
+                os.close();
+                return;
+            }
 
             RestMethod requestMethod = RestMethod.valueOf(httpExchange.getRequestMethod());
             URI requestURI = httpExchange.getRequestURI();
@@ -260,12 +273,22 @@ public abstract class RestApplication {
         public void handle(HttpExchange exchange) throws IOException {
             HttpsExchange httpsExchange = (HttpsExchange) exchange;
 
+            System.out.println("Handling HTTPS connection from " + httpsExchange.getRemoteAddress());
+            System.out.println("Handling endpoint " + httpsExchange.getRequestURI().getPath());
+
             Headers headers = httpsExchange.getRequestHeaders();
             String accept = headers.getFirst("accept");
-            if (!accept.equals("application/json")) return;
+            accept = accept == null ? headers.getFirst("accepts") : accept;
+            accept = accept == null ? "" : accept;
 
-            System.out.println("Handling connection from " + httpsExchange.getRemoteAddress());
-            System.out.println("Handling endpoint " + httpsExchange.getRequestURI().getPath());
+            if (!accept.equals("application/json")) {
+                httpsExchange.sendResponseHeaders(Response.CLIENT_ERROR_RESPONSE, Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE.getBytes(StandardCharsets.UTF_8).length);
+                OutputStream os = httpsExchange.getResponseBody();
+                os.write(Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE.getBytes(StandardCharsets.UTF_8));
+                os.flush();
+                os.close();
+                return;
+            }
 
             RestMethod requestMethod = RestMethod.valueOf(httpsExchange.getRequestMethod());
             URI requestURI = httpsExchange.getRequestURI();

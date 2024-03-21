@@ -1,10 +1,9 @@
 package net.alphalightning.rest.server;
 
+import net.alphalightning.rest.shared.annotations.DELETE;
 import net.alphalightning.rest.shared.annotations.GET;
 import net.alphalightning.rest.shared.annotations.POST;
 import net.alphalightning.rest.shared.annotations.PUT;
-import net.alphalightning.rest.shared.annotations.PATCH;
-import net.alphalightning.rest.shared.annotations.DELETE;
 
 import java.lang.annotation.Annotation;
 
@@ -12,7 +11,6 @@ public enum RestMethod {
     GET(GET.class),
     POST(POST.class),
     PUT(PUT.class),
-    PATCH(PATCH.class),
     DELETE(DELETE.class);
 
     private final Class<? extends Annotation> annotation;

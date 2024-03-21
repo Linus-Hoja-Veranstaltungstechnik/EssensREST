@@ -1,15 +1,18 @@
 package net.alphalightning.rest.server.swagger.objects;
 
 import com.google.gson.annotations.SerializedName;
+import net.alphalightning.rest.shared.InType;
+
 @SuppressWarnings("unused") // gson
 public class SwaggerRestMethodParameter {
     private final String name;
-    private String in = "path";
+    private String in = InType.PATH.toString();
     private String description;
     private String type = "string";
     private boolean required = true;
     private Long minimum = null;
     private Long maximum = null;
+    private String example = null;
     @SerializedName("enum")
     private String[] enumValues = null;
 
@@ -17,16 +20,21 @@ public class SwaggerRestMethodParameter {
         this.name = name;
     }
 
-    public String getIn() {
-        return in;
+    public InType getIn() {
+        return InType.valueOf(in.toUpperCase());
     }
 
-    public void setIn(String in) {
-        this.in = in;
+    public void setIn(InType in) {
+        this.in = in.toString();
     }
 
-    public SwaggerRestMethodParameter withIn(String in) {
+    public SwaggerRestMethodParameter withIn(InType in) {
         setIn(in);
+        return this;
+    }
+
+    public SwaggerRestMethodParameter withExample(String example) {
+        setExample(example);
         return this;
     }
 
@@ -106,5 +114,17 @@ public class SwaggerRestMethodParameter {
     public SwaggerRestMethodParameter withEnumValues(String... enumValues) {
         setEnumValues(enumValues);
         return this;
+    }
+
+    public String getExample() {
+        return example;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setExample(String example) {
+        this.example = example;
     }
 }

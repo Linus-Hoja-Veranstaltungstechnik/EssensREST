@@ -1,12 +1,13 @@
-package net.alphalightning.rest.client.annotations;
+package net.alphalightning.rest.server.swagger.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RestClientPath {
-    String value();
+@Target({ElementType.PARAMETER})
+public @interface SwaggerExample {
+    String value() default "{}";
+    String exampleJson() default "";
 }

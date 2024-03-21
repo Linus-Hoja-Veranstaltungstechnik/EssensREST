@@ -1,5 +1,7 @@
 package net.alphalightning.rest.server.swagger.objects;
 
+import net.alphalightning.rest.shared.auth.AuthorizationType;
+
 @SuppressWarnings("unused") // gson
 public class SwaggerSecurityDefinition {
     private final String type;
@@ -17,17 +19,15 @@ public class SwaggerSecurityDefinition {
         QUERY
     }
 
-    public enum AuthorizationType {
-        API_KEY("apiKey");
+    public String getType() {
+        return type;
+    }
 
-        final String value;
+    public String getIn() {
+        return in;
+    }
 
-        AuthorizationType(String value) {
-            this.value = value;
-        }
-
-        public String value() {
-            return value;
-        }
+    public String getName() {
+        return name;
     }
 }

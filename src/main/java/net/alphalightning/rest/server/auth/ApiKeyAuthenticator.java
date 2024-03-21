@@ -2,10 +2,11 @@ package net.alphalightning.rest.server.auth;
 
 import net.alphalightning.rest.server.RestMethod;
 import net.alphalightning.rest.server.handler.ApiKeyHandler;
+import net.alphalightning.rest.shared.auth.AuthorizationType;
 
 public class ApiKeyAuthenticator extends SingleValueAuthenticator {
-    private static final String REALM = "apikey";
-    private static final String HEADER_NAME = "X-API-Key";
+    private static final String REALM = AuthorizationType.API_KEY.value();
+    private static final String HEADER_NAME = AuthorizationType.API_KEY.getHeaderName();
 
     public ApiKeyAuthenticator() {
         super(REALM, HEADER_NAME);

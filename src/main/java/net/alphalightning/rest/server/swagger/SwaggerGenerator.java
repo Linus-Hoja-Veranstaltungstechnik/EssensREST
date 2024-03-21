@@ -7,15 +7,16 @@ import net.alphalightning.rest.server.RestMethod;
 import net.alphalightning.rest.server.annotations.RestApplicationPath;
 import net.alphalightning.rest.server.swagger.annotations.*;
 import net.alphalightning.rest.server.swagger.objects.*;
-import net.alphalightning.rest.shared.annotations.Path;
-import net.alphalightning.rest.shared.annotations.PathParam;
-import net.alphalightning.rest.shared.annotations.RestServerInfo;
+import net.alphalightning.rest.shared.InType;
+import net.alphalightning.rest.shared.annotations.*;
+import net.alphalightning.rest.shared.auth.AuthorizationType;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -47,7 +48,7 @@ public class SwaggerGenerator {
 
             builder.withBasePath(application.getClass().getAnnotation(RestApplicationPath.class).value());
             builder.withSchemes(SwaggerScheme.HTTP);
-            builder.withSecurityDefinition(API_KEY_AUTHENTICATION_IDENTIFIER, new SwaggerSecurityDefinition(SwaggerSecurityDefinition.AuthorizationType.API_KEY, SwaggerSecurityDefinition.InLocation.HEADER, "X-API-Key"));
+            builder.withSecurityDefinition(API_KEY_AUTHENTICATION_IDENTIFIER, new SwaggerSecurityDefinition(AuthorizationType.API_KEY, SwaggerSecurityDefinition.InLocation.HEADER, "X-API-Key"));
             addRestMethods(builder);
 
             String host = application.getClass().isAnnotationPresent(RestServerInfo.class) ? application.getClass().getAnnotation(RestServerInfo.class).host() : (String) RestServerInfo.class.getMethod("host").getDefaultValue();
@@ -65,18 +66,24 @@ public class SwaggerGenerator {
         }
     }
 
-    private void addRestMethods(SwaggerDocumentationBuilder builder) {
+    private void addRestMethods(SwaggerDocumentationBuilder builder) throws IOException {
         for (Method method : application.getClass().getMethods()) {
             if (method.isAnnotationPresent(Path.class)) {
                 String description = method.isAnnotationPresent(SwaggerDescription.class) ? method.getAnnotation(SwaggerDescription.class).value() : "";
 
-                SwaggerRestMethod restMethod = new SwaggerRestMethod(method.getAnnotation(Path.class).value(), RestMethod.GET);
+                RestMethod restMethod = RestMethod.GET;
+                restMethod = method.isAnnotationPresent(GET.class) ? RestMethod.GET : restMethod;
+                restMethod = method.isAnnotationPresent(PUT.class) ? RestMethod.PUT : restMethod;
+                restMethod = method.isAnnotationPresent(DELETE.class) ? RestMethod.DELETE : restMethod;
+                restMethod = method.isAnnotationPresent(POST.class) ? RestMethod.POST : restMethod;
 
-                restMethod.withDescription(description);
-                restMethod.withParameters(addRestParameters(method));
-                restMethod.withResponses(addResponses(method));
-                restMethod.withSecurity(API_KEY_AUTHENTICATION_IDENTIFIER);
-                builder.withRestMethod(restMethod);
+                SwaggerRestMethod swaggerRestMethod = new SwaggerRestMethod(method.getAnnotation(Path.class).value(), restMethod);
+
+                swaggerRestMethod.withDescription(description);
+                swaggerRestMethod.withParameters(addRestParameters(method));
+                swaggerRestMethod.withResponses(addResponses(method));
+                swaggerRestMethod.withSecurity(API_KEY_AUTHENTICATION_IDENTIFIER);
+                builder.withRestMethod(swaggerRestMethod);
             }
         }
     }
@@ -85,7 +92,7 @@ public class SwaggerGenerator {
         List<SwaggerRestResponse> responses = new LinkedList<>();
 
         if (method.isAnnotationPresent(SwaggerResponse.class)) {
-            for (SwaggerResponse responseAnnotation : method.getAnnotation(SwaggerResponses.class).value()) {
+            for (SwaggerResponse responseAnnotation : method.getAnnotationsByType(SwaggerResponse.class)) {
                 SwaggerRestResponse response = new SwaggerRestResponse(responseAnnotation.code());
                 response.withDescription(responseAnnotation.description());
                 responses.add(response);
@@ -95,7 +102,7 @@ public class SwaggerGenerator {
         return responses.toArray(SwaggerRestResponse[]::new);
     }
 
-    private SwaggerRestMethodParameter[] addRestParameters(Method method) {
+    private SwaggerRestMethodParameter[] addRestParameters(Method method) throws IOException {
         List<SwaggerRestMethodParameter> parameters = new ArrayList<>();
 
         for (Parameter methodParam : method.getParameters()) {
@@ -125,6 +132,19 @@ public class SwaggerGenerator {
                 }
 
                 parameters.add(restParam);
+            }
+
+            if (methodParam.isAnnotationPresent(Entity.class)){
+                String example = "";
+                if(methodParam.isAnnotationPresent(SwaggerExample.class)) {
+                    SwaggerExample swaggerExample = methodParam.getAnnotation(SwaggerExample.class);
+                    example = swaggerExample.value();
+                    if(!swaggerExample.exampleJson().isBlank()) example = Files.readString(new File(swaggerExample.exampleJson()).toPath());
+                }
+                SwaggerRestMethodParameter restParameter = new SwaggerRestMethodParameter(methodParam.getAnnotation(Entity.class).name())
+                        .withIn(InType.BODY)
+                        .withExample(example);
+                parameters.add(restParameter);
             }
         }
 

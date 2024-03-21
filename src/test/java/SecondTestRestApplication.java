@@ -21,7 +21,7 @@ public class SecondTestRestApplication extends RestApplication {
 
     @Path("/put/{id}")
     @PUT
-    public Response put(@PathParam("id") String id, @Entity() Hund hund) {
+    public Response put(@PathParam("id") String id, @Entity(name = "hund") Hund hund) {
         HundeService.put(id, hund);
         return Response.ok("Hund gespeichert.");
     }
@@ -42,12 +42,6 @@ public class SecondTestRestApplication extends RestApplication {
     @DELETE
     public Response delete() {
         return Response.ok("delete");
-    }
-
-    @Path("/patch")
-    @PATCH
-    public Response patch() {
-        return Response.ok("patch");
     }
 
 }

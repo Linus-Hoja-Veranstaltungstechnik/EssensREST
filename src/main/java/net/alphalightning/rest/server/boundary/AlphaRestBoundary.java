@@ -5,10 +5,7 @@ import net.alphalightning.rest.server.RestApplication;
 import net.alphalightning.rest.server.RestMethod;
 import net.alphalightning.rest.server.annotations.RestApplicationPath;
 import net.alphalightning.rest.server.handler.ApiKeyHandler;
-import net.alphalightning.rest.server.swagger.annotations.SwaggerDescription;
-import net.alphalightning.rest.server.swagger.annotations.SwaggerParameter;
-import net.alphalightning.rest.server.swagger.annotations.SwaggerResponse;
-import net.alphalightning.rest.server.swagger.annotations.SwaggerTitle;
+import net.alphalightning.rest.server.swagger.annotations.*;
 import net.alphalightning.rest.shared.annotations.*;
 
 @RestApplicationPath("/alpharest")
@@ -40,7 +37,7 @@ public class AlphaRestBoundary extends RestApplication {
 
     @GET
     @Path("/auth/apikey/{app-name}/call-count/{method}")
-    public Response getCallCountForPathAndMethod(@PathParam("app-name") String appName, @PathParam("method") RestMethod method, @Entity String path) {
+    public Response getCallCountForPathAndMethod(@PathParam("app-name") String appName, @PathParam("method") RestMethod method, @Entity(name = "path") String path) {
         return Response.ok().entity(ApiKeyHandler.getInstance().getCallCountForPathAndMethod(appName, method, path));
     }
 
@@ -51,8 +48,14 @@ public class AlphaRestBoundary extends RestApplication {
     }
 
     @GET
-    @Path("/auth/apikeys/")
+    @Path("/auth/apikeys")
     public Response getApiKeys() {
         return Response.ok().entity(ApiKeyHandler.getInstance().getApiKeys());
+    }
+
+    @PUT
+    @Path("/echo")
+    public Response echo(@Entity(name = "echoString") @SwaggerExample("echo this") String echoString) {
+        return Response.ok(echoString);
     }
 }

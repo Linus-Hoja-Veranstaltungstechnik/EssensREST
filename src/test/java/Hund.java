@@ -8,6 +8,11 @@ public class Hund implements Serializable {
     public Hund() {
     }
 
+    public Hund(String name, Integer age) {
+        this.name = name;
+        this.age = age;
+    }
+
     public String getName() {
         return name;
     }
