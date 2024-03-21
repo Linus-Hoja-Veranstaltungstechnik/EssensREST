@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 public class TestSwaggerDocumentation {
 
-    private final static File SWAGGER_FILE = new File("alpharest/swagger.json");
+    private final static File SWAGGER_FILE = new File("essensrest/swagger.json");
     private final Gson gson;
 
     public TestSwaggerDocumentation() {
@@ -19,7 +19,7 @@ public class TestSwaggerDocumentation {
         gson = gsonBuilder.setPrettyPrinting().enableComplexMapKeySerialization().create();
 
         SwaggerDocumentationBuilder builder = SwaggerDocumentation.getBuilder(new SwaggerInfo("Test", "1.0"));
-        builder.withBasePath("/alpharest/test");
+        builder.withBasePath("/essensrest/test");
         builder.withSecurityDefinition("APIKeyHeader", new SwaggerSecurityDefinition(AuthorizationType.API_KEY, SwaggerSecurityDefinition.InLocation.HEADER, "X-API-Key"));
         builder.withRestMethod(new SwaggerRestMethod("/enum/{enum}", RestMethod.GET).withDescription("A method to test enum compatibility.").withParameters(new SwaggerRestMethodParameter("enum").withDescription("Enum value of RestMethod.").withEnumValues(Arrays.stream(RestMethod.values()).map(RestMethod::toString).toArray(String[]::new))).withSecurity("APIKeyHeader"));
         builder.withSchemes(SwaggerScheme.HTTPS, SwaggerScheme.HTTP);

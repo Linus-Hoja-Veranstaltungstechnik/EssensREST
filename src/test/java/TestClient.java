@@ -7,7 +7,7 @@ import static de.linushoja.essensrest.client.objects.RestRequest.APPLICATION_JSO
 
 public class TestClient {
     public TestClient(String apiKey) {
-        RestRequest request = RestRequest.builder(new RestRequestTarget("localhost", 88, 8888, "alpharest/echo"))
+        RestRequest request = RestRequest.builder(new RestRequestTarget("localhost", 88, 8888, "essensrest/echo"))
                 .withAuthorization(AuthorizationType.API_KEY, apiKey)
                 .method(RestMethod.PUT)
                 .accepts(APPLICATION_JSON)

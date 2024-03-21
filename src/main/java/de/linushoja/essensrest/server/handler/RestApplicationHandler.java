@@ -4,7 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 import de.linushoja.essensrest.server.RestApplication;
 import de.linushoja.essensrest.server.RestMethod;
-import de.linushoja.essensrest.server.boundary.AlphaRestBoundary;
+import de.linushoja.essensrest.server.boundary.EssensRestBoundary;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -25,7 +25,7 @@ public class RestApplicationHandler {
     }
 
     private void initDefaultBoundaries() {
-        new AlphaRestBoundary();
+        new EssensRestBoundary();
     }
 
     public static RestApplicationHandler getInstance() {

@@ -18,8 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("unused")
 public class ApiKeyHandler {
 
-    private static final File APIKEY_FILE = new File("alpharest/apikeys.json");
-    private static final File CALLSTACK_FILE = new File("alpharest/callstacks.json");
+    private static final File APIKEY_FILE = new File("essensrest/apikeys.json");
+    private static final File CALLSTACK_FILE = new File("essensrest/callstacks.json");
 
     private static ApiKeyHandler instance;
 

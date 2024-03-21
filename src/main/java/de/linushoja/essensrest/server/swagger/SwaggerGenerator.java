@@ -37,7 +37,7 @@ public class SwaggerGenerator {
         assert basePath != null;
         assert !basePath.isEmpty();
 
-        this.swaggerFile = new File(String.format("alpharest%sswagger%s%s%sswagger.json", File.separator, File.separator, basePath, File.separator));
+        this.swaggerFile = new File(String.format("essensrest%sswagger%s%s%sswagger.json", File.separator, File.separator, basePath, File.separator));
     }
 
     public File generate() {
