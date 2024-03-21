@@ -1,9 +1,9 @@
-import net.alphalightning.rest.client.objects.RestRequest;
-import net.alphalightning.rest.client.objects.RestRequestTarget;
-import net.alphalightning.rest.server.RestMethod;
-import net.alphalightning.rest.shared.auth.AuthorizationType;
+import de.linushoja.essensrest.client.objects.RestRequest;
+import de.linushoja.essensrest.client.objects.RestRequestTarget;
+import de.linushoja.essensrest.server.RestMethod;
+import de.linushoja.essensrest.shared.auth.AuthorizationType;
 
-import static net.alphalightning.rest.client.objects.RestRequest.APPLICATION_JSON;
+import static de.linushoja.essensrest.client.objects.RestRequest.APPLICATION_JSON;
 
 public class TestClient {
     public TestClient(String apiKey) {

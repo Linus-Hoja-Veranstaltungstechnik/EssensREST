@@ -1,8 +1,8 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.alphalightning.rest.server.RestMethod;
-import net.alphalightning.rest.server.swagger.objects.*;
-import net.alphalightning.rest.shared.auth.AuthorizationType;
+import de.linushoja.essensrest.server.RestMethod;
+import de.linushoja.essensrest.server.swagger.objects.*;
+import de.linushoja.essensrest.shared.auth.AuthorizationType;
 
 import java.io.File;
 import java.io.FileWriter;

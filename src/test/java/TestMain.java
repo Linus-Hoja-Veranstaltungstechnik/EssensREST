@@ -1,4 +1,4 @@
-import net.alphalightning.rest.server.handler.ApiKeyHandler;
+import de.linushoja.essensrest.server.handler.ApiKeyHandler;
 
 import java.time.Duration;
 

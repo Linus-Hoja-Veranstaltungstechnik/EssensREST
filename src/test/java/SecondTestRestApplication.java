@@ -1,7 +1,7 @@
-import net.alphalightning.rest.Response;
-import net.alphalightning.rest.server.RestApplication;
-import net.alphalightning.rest.server.annotations.RestApplicationPath;
-import net.alphalightning.rest.shared.annotations.*;
+import de.linushoja.essensrest.Response;
+import de.linushoja.essensrest.server.RestApplication;
+import de.linushoja.essensrest.server.annotations.RestApplicationPath;
+import de.linushoja.essensrest.shared.annotations.*;
 
 @RestApplicationPath("/alpharest/test2")
 @SuppressWarnings("unused")
