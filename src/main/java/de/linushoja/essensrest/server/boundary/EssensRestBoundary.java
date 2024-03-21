@@ -8,10 +8,10 @@ import de.linushoja.essensrest.server.handler.ApiKeyHandler;
 import de.linushoja.essensrest.server.swagger.annotations.*;
 import de.linushoja.essensrest.shared.annotations.*;
 
-@RestApplicationPath("/alpharest")
-@SwaggerTitle("AlphaREST")
+@RestApplicationPath("/essensrest")
+@SwaggerTitle("EssensREST")
 @SuppressWarnings("unused") // rest api
-public class AlphaRestBoundary extends RestApplication {
+public class EssensRestBoundary extends RestApplication {
 
     @GET
     @Path("/auth/apikey/{app-name}/:new")

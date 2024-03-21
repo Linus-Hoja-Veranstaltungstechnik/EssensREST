@@ -5,7 +5,7 @@ import de.linushoja.essensrest.server.annotations.RestApplicationPath;
 import de.linushoja.essensrest.server.swagger.annotations.SwaggerExample;
 import de.linushoja.essensrest.shared.annotations.*;
 
-@RestApplicationPath("/alpharest/test")
+@RestApplicationPath("/essensrest/test")
 @SuppressWarnings("unused")
 public class TestRestApplication extends RestApplication {
 

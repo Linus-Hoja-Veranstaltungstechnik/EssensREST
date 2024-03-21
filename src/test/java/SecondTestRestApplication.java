@@ -3,7 +3,7 @@ import de.linushoja.essensrest.server.RestApplication;
 import de.linushoja.essensrest.server.annotations.RestApplicationPath;
 import de.linushoja.essensrest.shared.annotations.*;
 
-@RestApplicationPath("/alpharest/test2")
+@RestApplicationPath("/essensrest/test2")
 @SuppressWarnings("unused")
 public class SecondTestRestApplication extends RestApplication {
 
