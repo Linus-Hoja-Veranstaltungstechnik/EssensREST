@@ -1,7 +1,6 @@
 package de.linushoja.essensrest.client.objects;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import de.linushoja.essensrest.gson.GsonHelper;
 import de.linushoja.essensrest.server.RestMethod;
 import de.linushoja.essensrest.client.handler.RestRequestHandler;
 import de.linushoja.essensrest.shared.auth.AuthorizationType;
@@ -25,16 +24,11 @@ public record RestRequest(RestRequestTarget target, RestMethod restMethod, Map<S
 
     public static class RestRequestBuilder {
         private final RestRequestTarget target;
-
-        private final Gson gson;
         private RestMethod restMethod = RestMethod.GET;
         private Map<String, List<String>> headers = new HashMap<>();
         private String body = "";
 
         private RestRequestBuilder(RestRequestTarget target) {
-            GsonBuilder gsonBuilder = new GsonBuilder().setPrettyPrinting().enableComplexMapKeySerialization();
-            gson = gsonBuilder.create();
-
             this.target = target;
         }
 
@@ -68,7 +62,7 @@ public record RestRequest(RestRequestTarget target, RestMethod restMethod, Map<S
         }
 
         public RestRequestBuilder withEntity(Object entity) {
-            this.body = gson.toJson(entity);
+            this.body = GsonHelper.getGson().toJson(entity);
             return this;
         }
 

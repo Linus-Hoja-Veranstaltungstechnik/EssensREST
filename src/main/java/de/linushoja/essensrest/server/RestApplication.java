@@ -1,8 +1,7 @@
 package de.linushoja.essensrest.server;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.*;
+import de.linushoja.essensrest.gson.GsonHelper;
 import de.linushoja.essensrest.server.auth.ApiKeyAuthenticator;
 import de.linushoja.essensrest.server.util.ParameterUtils;
 import de.linushoja.essensrest.Response;
@@ -31,8 +30,6 @@ public abstract class RestApplication {
     private final ConcurrentHashMap<RestMethod, List<Method>> methods;
     private final ConcurrentHashMap<Method, String> methodPaths;
 
-    private final Gson gson;
-
     private String rootPath;
 
     private int httpPort = 88;
@@ -45,11 +42,6 @@ public abstract class RestApplication {
     protected RestApplication() {
         methods = new ConcurrentHashMap<>();
         methodPaths = new ConcurrentHashMap<>();
-
-        GsonBuilder builder = new GsonBuilder();
-        builder.setPrettyPrinting();
-
-        gson = builder.create();
 
         fetchServerInfo();
 
@@ -157,7 +149,7 @@ public abstract class RestApplication {
                     injectedParams[i] = ParameterUtils.transformObject(pathParams.getOrDefault(paramId, null), parameter.getType());
                     continue;
                 } else if (parameter.isAnnotationPresent(Entity.class)) {
-                    Object o = entity.startsWith("{") && !parameter.getType().isAssignableFrom(String.class) ? gson.fromJson(entity, parameter.getType()) : entity;
+                    Object o = entity.startsWith("{") && !parameter.getType().isAssignableFrom(String.class) ? GsonHelper.getGson().fromJson(entity, parameter.getType()) : entity;
                     injectedParams[i] = o;
                     continue;
                 }

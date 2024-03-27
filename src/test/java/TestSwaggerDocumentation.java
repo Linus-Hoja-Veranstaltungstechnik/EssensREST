@@ -1,5 +1,4 @@
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import de.linushoja.essensrest.gson.GsonHelper;
 import de.linushoja.essensrest.server.RestMethod;
 import de.linushoja.essensrest.server.swagger.objects.*;
 import de.linushoja.essensrest.shared.auth.AuthorizationType;
@@ -12,11 +11,8 @@ import java.util.Arrays;
 public class TestSwaggerDocumentation {
 
     private final static File SWAGGER_FILE = new File("essensrest/swagger.json");
-    private final Gson gson;
 
     public TestSwaggerDocumentation() {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gson = gsonBuilder.setPrettyPrinting().enableComplexMapKeySerialization().create();
 
         SwaggerDocumentationBuilder builder = SwaggerDocumentation.getBuilder(new SwaggerInfo("Test", "1.0"));
         builder.withBasePath("/essensrest/test");
@@ -39,7 +35,7 @@ public class TestSwaggerDocumentation {
         }
 
         try (FileWriter fileWriter = new FileWriter(SWAGGER_FILE)) {
-            gson.toJson(swaggerDocumentation, fileWriter);
+            GsonHelper.getGson().toJson(swaggerDocumentation, fileWriter);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

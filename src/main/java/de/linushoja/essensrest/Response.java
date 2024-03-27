@@ -1,7 +1,6 @@
 package de.linushoja.essensrest;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import de.linushoja.essensrest.gson.GsonHelper;
 
 public class Response {
     public static final int OK_RESPONSE = 200;
@@ -14,17 +13,10 @@ public class Response {
 
     private final int responseCode;
 
-    private final Gson gson;
-
     private String entity;
 
     public Response(int code) {
         responseCode = code;
-
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.setPrettyPrinting();
-
-        gson = gsonBuilder.create();
     }
 
     public static Response ok() {
@@ -79,7 +71,7 @@ public class Response {
     }
 
     private void setEntity(Object entity) {
-        this.entity = gson.toJson(entity);
+        this.entity = GsonHelper.getGson().toJson(entity);
     }
 
     public int getResponseCode() {

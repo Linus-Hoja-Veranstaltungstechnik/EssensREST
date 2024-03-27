@@ -1,7 +1,6 @@
 package de.linushoja.essensrest.server.swagger;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import de.linushoja.essensrest.gson.GsonHelper;
 import de.linushoja.essensrest.server.RestApplication;
 import de.linushoja.essensrest.server.swagger.annotations.*;
 import de.linushoja.essensrest.server.swagger.objects.*;
@@ -24,13 +23,11 @@ import java.util.List;
 
 public class SwaggerGenerator {
     private static final String API_KEY_AUTHENTICATION_IDENTIFIER = "APIKeyHeader";
-    private final Gson gson;
     private final RestApplication application;
     private final File swaggerFile;
     private final String basePath;
 
     public SwaggerGenerator(RestApplication application) {
-        gson = initSwagger();
         this.application = application;
         this.basePath = application.getClass().getAnnotation(RestApplicationPath.class).value();
 
@@ -120,6 +117,10 @@ public class SwaggerGenerator {
                     restParam.setType(String.class);
                 }
 
+                if(type == int.class){
+                    restParam.setType(Integer.class);
+                }
+
                 if (methodParam.isAnnotationPresent(SwaggerParameter.class)) {
                     SwaggerParameter swaggerParameter = methodParam.getAnnotation(SwaggerParameter.class);
 
@@ -159,15 +160,10 @@ public class SwaggerGenerator {
         }
 
         try (FileWriter fileWriter = new FileWriter(swaggerFile)) {
-            gson.toJson(swaggerDocumentation, fileWriter);
+            GsonHelper.getGson().toJson(swaggerDocumentation, fileWriter);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Gson initSwagger() {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        return gsonBuilder.setPrettyPrinting().enableComplexMapKeySerialization().create();
     }
 
     private void createSwaggerFileIfNotExisting() throws IOException {

@@ -1,9 +1,8 @@
 package de.linushoja.essensrest.server.handler;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import de.linushoja.essensrest.server.util.ApiKeyUtils;
+import de.linushoja.essensrest.gson.GsonHelper;
 import de.linushoja.essensrest.server.RestMethod;
+import de.linushoja.essensrest.server.util.ApiKeyUtils;
 import de.linushoja.essensrest.shared.auth.ApiKey;
 
 import java.io.File;
@@ -25,15 +24,8 @@ public class ApiKeyHandler {
 
     private ConcurrentHashMap<String, ApiKey> apiKeys;
 
-    private final Gson gson;
-
     private ApiKeyHandler() {
         apiKeys = new ConcurrentHashMap<>();
-
-        GsonBuilder builder = new GsonBuilder();
-        builder.setPrettyPrinting();
-
-        gson = builder.create();
 
         loadApiKeysFromLocalStorage();
         storeAdminKeyIfNoKeyExisting();
@@ -116,7 +108,7 @@ public class ApiKeyHandler {
         }
 
         try (FileWriter fileWriter = new FileWriter(APIKEY_FILE)) {
-            gson.toJson(mapToApiKeyHashMap(apiKeys), fileWriter);
+            GsonHelper.getGson().toJson(mapToApiKeyHashMap(apiKeys), fileWriter);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -135,7 +127,7 @@ public class ApiKeyHandler {
         if (!APIKEY_FILE.exists()) return;
 
         try (FileReader fileReader = new FileReader(APIKEY_FILE)) {
-            apiKeys = mapToApiKeys(gson.fromJson(fileReader, HashMap.class));
+            apiKeys = mapToApiKeys(GsonHelper.getGson().fromJson(fileReader, HashMap.class));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -147,7 +139,7 @@ public class ApiKeyHandler {
         if (!CALLSTACK_FILE.exists()) return;
 
         try (FileReader fileReader = new FileReader(CALLSTACK_FILE)) {
-            mapToCallstacks(gson.fromJson(fileReader, HashMap.class));
+            mapToCallstacks(GsonHelper.getGson().fromJson(fileReader, HashMap.class));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -173,7 +165,7 @@ public class ApiKeyHandler {
         }
 
         try (FileWriter fileWriter = new FileWriter(CALLSTACK_FILE)) {
-            gson.toJson(mapCallstacksToHashMap(), fileWriter);
+            GsonHelper.getGson().toJson(mapCallstacksToHashMap(), fileWriter);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
