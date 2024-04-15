@@ -11,12 +11,17 @@ public enum RestMethod {
     GET(GET.class),
     POST(POST.class),
     PUT(PUT.class),
-    DELETE(DELETE.class);
+    DELETE(DELETE.class),
+    OPTIONS();
 
     private final Class<? extends Annotation> annotation;
 
     RestMethod(Class<? extends Annotation> annotation) {
         this.annotation = annotation;
+    }
+
+    RestMethod() {
+        this.annotation = null;
     }
 
     public Class<? extends Annotation> getAnnotation() {
@@ -25,7 +30,13 @@ public enum RestMethod {
 
     public static RestMethod getMethodByAnnotation(Class<? extends Annotation> annotation){
         for(RestMethod restMethod : values()){
-            if(restMethod.annotation.isAssignableFrom(annotation)) return restMethod;
+            if (restMethod.annotation == null) {
+                continue;
+            }
+            if (!restMethod.annotation.isAssignableFrom(annotation)) {
+                continue;
+            }
+            return restMethod;
         }
         return null;
     }

@@ -1,9 +1,18 @@
 import de.linushoja.essensrest.Response;
 import de.linushoja.essensrest.server.RestApplication;
+import de.linushoja.essensrest.server.annotations.Auth;
 import de.linushoja.essensrest.server.annotations.RestApplicationPath;
-import de.linushoja.essensrest.shared.annotations.*;
+import de.linushoja.essensrest.server.auth.ApiKeyAuthenticator;
+import de.linushoja.essensrest.shared.annotations.DELETE;
+import de.linushoja.essensrest.shared.annotations.Entity;
+import de.linushoja.essensrest.shared.annotations.GET;
+import de.linushoja.essensrest.shared.annotations.POST;
+import de.linushoja.essensrest.shared.annotations.PUT;
+import de.linushoja.essensrest.shared.annotations.Path;
+import de.linushoja.essensrest.shared.annotations.PathParam;
 
 @RestApplicationPath("/essensrest/test2")
+@Auth(ApiKeyAuthenticator.class)
 @SuppressWarnings("unused")
 public class SecondTestRestApplication extends RestApplication {
 

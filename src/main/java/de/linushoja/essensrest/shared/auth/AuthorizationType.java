@@ -1,7 +1,8 @@
 package de.linushoja.essensrest.shared.auth;
 
 public enum AuthorizationType {
-    API_KEY("apiKey", "X-API-Key");
+    API_KEY("apiKey", "X-API-Key"),
+    BASIC("basic", "Authorization");
 
     final String value;
     final String headerName;

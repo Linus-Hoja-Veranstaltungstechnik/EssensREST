@@ -5,8 +5,16 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class SwaggerUiHandler implements HttpHandler {
     private static SwaggerUiHandler instance;
@@ -38,7 +46,11 @@ public class SwaggerUiHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        System.out.println("Call to swagger ui!");
+
         Headers header = exchange.getResponseHeaders();
+
+        header.add("Access-Control-Allow-Origin", "*");
 
         String fullPath = exchange.getRequestURI().getPath();
         fullPath = fullPath.startsWith("/") ? fullPath.replaceFirst("/", "") : fullPath;
@@ -75,7 +87,10 @@ public class SwaggerUiHandler implements HttpHandler {
             InputStream fs = getInputStream(fileId, methodPath);
             final byte[] buffer = new byte[0x10000];
             int count;
-            while ((count = fs.read(buffer)) >= 0) {
+            while (true) {
+                assert fs != null;
+                if (!((count = fs.read(buffer)) >= 0))
+                    break;
                 output.write(buffer, 0, count);
             }
             output.flush();

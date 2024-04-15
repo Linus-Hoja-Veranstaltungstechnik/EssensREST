@@ -1,15 +1,13 @@
 package de.linushoja.essensrest.server.swagger.objects;
 
-import de.linushoja.essensrest.shared.auth.AuthorizationType;
-
 @SuppressWarnings("unused") // gson
 public class SwaggerSecurityDefinition {
     private final String type;
     private final String in;
     private final String name;
 
-    public SwaggerSecurityDefinition(AuthorizationType type, InLocation in, String name) {
-        this.type = type.value();
+    public SwaggerSecurityDefinition(String identifier, InLocation in, String name) {
+        this.type = identifier;
         this.in = in.name().toLowerCase();
         this.name = name;
     }

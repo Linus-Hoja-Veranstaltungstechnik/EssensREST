@@ -1,34 +1,62 @@
 package de.linushoja.essensrest.server;
 
-import com.sun.net.httpserver.*;
-import de.linushoja.essensrest.gson.GsonHelper;
-import de.linushoja.essensrest.server.auth.ApiKeyAuthenticator;
-import de.linushoja.essensrest.server.util.ParameterUtils;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.sun.net.httpserver.Authenticator;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpPrincipal;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsExchange;
+import com.sun.net.httpserver.HttpsServer;
 import de.linushoja.essensrest.Response;
+import de.linushoja.essensrest.gson.GsonHelper;
+import de.linushoja.essensrest.server.annotations.Auth;
 import de.linushoja.essensrest.server.annotations.RestApplicationPath;
+import de.linushoja.essensrest.server.auth.AuthenticatorMultiplexer;
+import de.linushoja.essensrest.server.cors.annotation.CORS;
+import de.linushoja.essensrest.server.handler.CORSHandler;
 import de.linushoja.essensrest.server.handler.RestApplicationHandler;
 import de.linushoja.essensrest.server.handler.SwaggerUiHandler;
 import de.linushoja.essensrest.server.swagger.SwaggerGenerator;
+import de.linushoja.essensrest.server.util.ParameterUtils;
 import de.linushoja.essensrest.shared.annotations.Entity;
 import de.linushoja.essensrest.shared.annotations.Path;
 import de.linushoja.essensrest.shared.annotations.PathParam;
 import de.linushoja.essensrest.shared.annotations.RestServerInfo;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public abstract class RestApplication {
 
+    private final boolean authActive;
+
+    private final CORS corsAnnotation;
+
     private final ConcurrentHashMap<RestMethod, List<Method>> methods;
     private final ConcurrentHashMap<Method, String> methodPaths;
+
+    private final AuthenticatorMultiplexer multiAuth;
 
     private String rootPath;
 
@@ -43,9 +71,30 @@ public abstract class RestApplication {
         methods = new ConcurrentHashMap<>();
         methodPaths = new ConcurrentHashMap<>();
 
+        corsAnnotation = getClass().isAnnotationPresent(CORS.class) ? getClass().getDeclaredAnnotation(CORS.class) :
+                CORS.DISABLED;
+
+        authActive = getClass().isAnnotationPresent(Auth.class);
+
+        multiAuth = new AuthenticatorMultiplexer(authActive ?
+                instantiate(getClass().getAnnotation(Auth.class).value()) : null);
+
         fetchServerInfo();
 
         RestApplicationHandler.getInstance().registerRestApplication(this);
+    }
+
+    private Authenticator[] instantiate(Class<? extends Authenticator>[] authenticators) {
+        List<Authenticator> authList = new ArrayList<>();
+        for (Class<? extends Authenticator> authenticatorClass : authenticators) {
+            try {
+                authList.add(authenticatorClass.getDeclaredConstructor().newInstance());
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return authList.toArray(Authenticator[]::new);
     }
 
     private void fetchServerInfo() {
@@ -56,11 +105,11 @@ public abstract class RestApplication {
         host = info.host() != null && !info.host().isEmpty() && !info.host().isBlank() ? info.host() : host;
     }
 
-    public void init(HttpsServer httpsServer, HttpServer httpServer) {
+    public void init(HttpsServer httpsServer, HttpServer httpServer, Authenticator authenticator) {
         httpContext = initApplicationContext(httpServer);
-        httpContext.setAuthenticator(new ApiKeyAuthenticator());
+        httpContext.setAuthenticator(authenticator);
         httpsContext = initApplicationContext(httpsServer);
-        httpsContext.setAuthenticator(new ApiKeyAuthenticator());
+        httpsContext.setAuthenticator(authenticator);
         loadMethods();
     }
 
@@ -133,39 +182,8 @@ public abstract class RestApplication {
         return resolvedParams;
     }
 
-    private Response callMethod(Method method, Map<String, String> pathParams, String entity) throws InvocationTargetException, IllegalAccessException {
-
-        Response response;
-
-        try {
-            method.setAccessible(true);
-            Parameter[] parameters = method.getParameters();
-            Object[] injectedParams = new Object[parameters.length];
-
-            for (int i = 0; i < parameters.length; i++) {
-                Parameter parameter = parameters[i];
-                if (parameter.isAnnotationPresent(PathParam.class)) {
-                    String paramId = parameter.getAnnotation(PathParam.class).value();
-                    injectedParams[i] = ParameterUtils.transformObject(pathParams.getOrDefault(paramId, null), parameter.getType());
-                    continue;
-                } else if (parameter.isAnnotationPresent(Entity.class)) {
-                    Object o = entity.startsWith("{") && !parameter.getType().isAssignableFrom(String.class) ? GsonHelper.getGson().fromJson(entity, parameter.getType()) : entity;
-                    injectedParams[i] = o;
-                    continue;
-                }
-                injectedParams[i] = null;
-            }
-
-            if (injectedParams.length == 0) {
-                response = (Response) method.invoke(this);
-            } else {
-                response = (Response) method.invoke(this, injectedParams);
-            }
-        } catch (Exception e) {
-            response = Response.serverError("Error occured during method execution: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return response;
+    public Authenticator getMultiAuthenticator() {
+        return multiAuth;
     }
 
     private Method resolveMethod(RestMethod requestMethod, String requestedPath) {
@@ -185,6 +203,11 @@ public abstract class RestApplication {
         }
 
         return null;
+    }
+
+    @SuppressWarnings("unused")
+    public HttpContext getHttpContext() {
+        return httpContext;
     }
 
     private int paramCount(String s) {
@@ -220,43 +243,134 @@ public abstract class RestApplication {
         return resolveMethod(restMethod, path) != null;
     }
 
-    private class HttpExchangeHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange httpExchange) throws IOException {
-            System.out.println("Handling HTTPS connection from " + httpExchange.getRemoteAddress());
-            System.out.println("Handling endpoint " + httpExchange.getRequestURI().getPath());
+    @SuppressWarnings("unused")
+    public HttpContext getHttpsContext() {
+        return httpsContext;
+    }
 
-            Headers headers = httpExchange.getRequestHeaders();
-            String accept = headers.getFirst("accept");
-            accept = accept == null ? headers.getFirst("accepts") : accept;
-            accept = accept == null ? "" : accept;
+    private void handleConnection(HttpExchange exchange) throws IOException {
+        Headers headers = exchange.getRequestHeaders();
+        String accept = headers.getFirst("accept");
+        accept = accept == null ? headers.getFirst("accepts") : accept;
+        accept = accept == null ? "" : accept;
 
-            if (!accept.equals("application/json")) {
-                httpExchange.sendResponseHeaders(Response.CLIENT_ERROR_RESPONSE, Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE.getBytes(StandardCharsets.UTF_8).length);
-                OutputStream os = httpExchange.getResponseBody();
-                os.write(Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE.getBytes(StandardCharsets.UTF_8));
-                os.flush();
-                os.close();
-                return;
-            }
+        RestMethod requestMethod = RestMethod.valueOf(exchange.getRequestMethod());
+        URI requestURI = exchange.getRequestURI();
+        Response response;
 
-            RestMethod requestMethod = RestMethod.valueOf(httpExchange.getRequestMethod());
-            URI requestURI = httpExchange.getRequestURI();
+        if (requestMethod == RestMethod.OPTIONS) {
+            response = handleCORSRequest(requestURI);
+        } else {
+            response = handleRESTRequest(exchange, accept, requestMethod, requestURI);
+        }
 
-            Method method = resolveMethod(requestMethod, requestURI.getPath());
-            Response response;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-            try {
-                response = method != null ? callMethod(method, preparePathParams(method, requestURI.getPath()), readBody(httpExchange.getRequestBody())) : Response.clientError("Method not Found.");
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                response = Response.serverError("Could not execute method.");
-            }
+        System.out.println("Sending response:");
+        System.out.println(gson.toJson(response));
 
-            httpExchange.sendResponseHeaders(response.getResponseCode(), response.getEntity().getBytes(StandardCharsets.UTF_8).length);
-            OutputStream os = httpExchange.getResponseBody();
+        exchange.getResponseHeaders().putAll(response.getHeaders());
+        exchange.sendResponseHeaders(response.getResponseCode(),
+                response.getEntity() == null || response.getEntity().isBlank() ? -1 :
+                response.getEntity().getBytes(StandardCharsets.UTF_8).length);
+
+        if (response.getEntity() != null && !response.getEntity().isBlank()) {
+            OutputStream os = exchange.getResponseBody();
             os.write(response.getEntity().getBytes(StandardCharsets.UTF_8));
             os.flush();
             os.close();
+        }
+    }
+
+    private Response handleCORSRequest(URI requestURI) {
+        if (!corsAnnotation.enabled()) {
+            return Response.notFound();
+        }
+
+        List<RestMethod> restMethods = resolveRestMethodsByPath(requestURI.getPath());
+        restMethods.add(RestMethod.OPTIONS);
+
+        return CORSHandler.getResponse(restMethods, authActive, corsAnnotation);
+    }
+
+    private Response handleRESTRequest(HttpExchange exchange, String accept, RestMethod requestMethod, URI requestURI) {
+        if (!accept.equals("application/json")) {
+            return Response.clientError(Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE);
+        }
+
+        Method method = resolveMethod(requestMethod, requestURI.getPath());
+
+        try {
+            return method != null ? callMethod(method, preparePathParams(method, requestURI.getPath()),
+                    readBody(exchange.getRequestBody()), exchange.getPrincipal()) : Response.clientError(
+                    "Method not Found.");
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            return Response.serverError("Could not execute method.");
+        }
+    }
+
+    private List<RestMethod> resolveRestMethodsByPath(String requestedPath) {
+        List<RestMethod> result = new ArrayList<>();
+
+        for (RestMethod restMethod : methods.keySet()) {
+            if (hasPath(restMethod, requestedPath)) {
+                result.add(restMethod);
+            }
+        }
+
+        return result;
+    }
+
+    private Response callMethod(Method method, Map<String, String> pathParams, String entity,
+                                HttpPrincipal principal) throws
+                                                         InvocationTargetException,
+                                                         IllegalAccessException {
+
+        Response response;
+
+        try {
+            method.setAccessible(true);
+            Parameter[] parameters = method.getParameters();
+            Object[] injectedParams = new Object[parameters.length];
+
+            for (int i = 0; i < parameters.length; i++) {
+                Parameter parameter = parameters[i];
+                if (parameter.isAnnotationPresent(PathParam.class)) {
+                    String paramId = parameter.getAnnotation(PathParam.class).value();
+                    injectedParams[i] = ParameterUtils.transformObject(pathParams.getOrDefault(paramId, null),
+                            parameter.getType());
+                    continue;
+                } else if (parameter.isAnnotationPresent(Entity.class)) {
+                    Object o = entity.startsWith("{") && !parameter.getType().isAssignableFrom(String.class) ?
+                            GsonHelper.getGson().fromJson(entity, parameter.getType()) : entity;
+                    injectedParams[i] = o;
+                    continue;
+                } else if (HttpPrincipal.class.isAssignableFrom(parameter.getType())) {
+                    injectedParams[i] = principal;
+                    continue;
+                }
+                injectedParams[i] = null;
+            }
+
+            if (injectedParams.length == 0) {
+                response = (Response) method.invoke(this);
+            } else {
+                response = (Response) method.invoke(this, injectedParams);
+            }
+        } catch (Exception e) {
+            response = Response.serverError("Error occured during method execution: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+    private class HttpExchangeHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange httpExchange) throws IOException {
+            System.out.println("Handling HTTP connection from " + httpExchange.getRemoteAddress());
+            System.out.println("Handling endpoint " + httpExchange.getRequestMethod() + " " + httpExchange.getRequestURI().getPath());
+
+            handleConnection(httpExchange);
         }
     }
 
@@ -266,39 +380,9 @@ public abstract class RestApplication {
             HttpsExchange httpsExchange = (HttpsExchange) exchange;
 
             System.out.println("Handling HTTPS connection from " + httpsExchange.getRemoteAddress());
-            System.out.println("Handling endpoint " + httpsExchange.getRequestURI().getPath());
+            System.out.println("Handling endpoint " + exchange.getRequestMethod() + " " + httpsExchange.getRequestURI().getPath());
 
-            Headers headers = httpsExchange.getRequestHeaders();
-            String accept = headers.getFirst("accept");
-            accept = accept == null ? headers.getFirst("accepts") : accept;
-            accept = accept == null ? "" : accept;
-
-            if (!accept.equals("application/json")) {
-                httpsExchange.sendResponseHeaders(Response.CLIENT_ERROR_RESPONSE, Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE.getBytes(StandardCharsets.UTF_8).length);
-                OutputStream os = httpsExchange.getResponseBody();
-                os.write(Response.CLIENT_ERROR_WRONG_ACCEPT_MESSAGE.getBytes(StandardCharsets.UTF_8));
-                os.flush();
-                os.close();
-                return;
-            }
-
-            RestMethod requestMethod = RestMethod.valueOf(httpsExchange.getRequestMethod());
-            URI requestURI = httpsExchange.getRequestURI();
-
-            Method method = resolveMethod(requestMethod, requestURI.getPath());
-            Response response;
-
-            try {
-                response = method != null ? callMethod(method, preparePathParams(method, requestURI.getPath()), readBody(httpsExchange.getRequestBody())) : Response.clientError("Method not Found.");
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                response = Response.serverError("Could not execute method.");
-            }
-
-            httpsExchange.sendResponseHeaders(response.getResponseCode(), response.getEntity().getBytes(StandardCharsets.UTF_8).length);
-            OutputStream os = httpsExchange.getResponseBody();
-            os.write(response.getEntity().getBytes(StandardCharsets.UTF_8));
-            os.flush();
-            os.close();
+            handleConnection(httpsExchange);
         }
     }
 }

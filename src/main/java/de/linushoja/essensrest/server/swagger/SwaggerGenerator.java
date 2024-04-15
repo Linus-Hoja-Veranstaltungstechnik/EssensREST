@@ -2,17 +2,37 @@ package de.linushoja.essensrest.server.swagger;
 
 import de.linushoja.essensrest.gson.GsonHelper;
 import de.linushoja.essensrest.server.RestApplication;
-import de.linushoja.essensrest.server.swagger.annotations.*;
-import de.linushoja.essensrest.server.swagger.objects.*;
 import de.linushoja.essensrest.server.RestMethod;
+import de.linushoja.essensrest.server.annotations.Auth;
 import de.linushoja.essensrest.server.annotations.RestApplicationPath;
-import de.linushoja.essensrest.shared.annotations.*;
+import de.linushoja.essensrest.server.auth.SingleValueAuthenticator;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerDescription;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerExample;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerParameter;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerResponse;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerTitle;
+import de.linushoja.essensrest.server.swagger.objects.SwaggerDocumentation;
+import de.linushoja.essensrest.server.swagger.objects.SwaggerDocumentationBuilder;
+import de.linushoja.essensrest.server.swagger.objects.SwaggerInfo;
+import de.linushoja.essensrest.server.swagger.objects.SwaggerRestMethod;
+import de.linushoja.essensrest.server.swagger.objects.SwaggerRestMethodParameter;
+import de.linushoja.essensrest.server.swagger.objects.SwaggerRestResponse;
+import de.linushoja.essensrest.server.swagger.objects.SwaggerScheme;
+import de.linushoja.essensrest.server.swagger.objects.SwaggerSecurityDefinition;
 import de.linushoja.essensrest.shared.InType;
-import de.linushoja.essensrest.shared.auth.AuthorizationType;
+import de.linushoja.essensrest.shared.annotations.DELETE;
+import de.linushoja.essensrest.shared.annotations.Entity;
+import de.linushoja.essensrest.shared.annotations.GET;
+import de.linushoja.essensrest.shared.annotations.POST;
+import de.linushoja.essensrest.shared.annotations.PUT;
+import de.linushoja.essensrest.shared.annotations.Path;
+import de.linushoja.essensrest.shared.annotations.PathParam;
+import de.linushoja.essensrest.shared.annotations.RestServerInfo;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.nio.file.Files;
@@ -22,14 +42,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class SwaggerGenerator {
-    private static final String API_KEY_AUTHENTICATION_IDENTIFIER = "APIKeyHeader";
     private final RestApplication application;
     private final File swaggerFile;
-    private final String basePath;
 
     public SwaggerGenerator(RestApplication application) {
         this.application = application;
-        this.basePath = application.getClass().getAnnotation(RestApplicationPath.class).value();
+        String basePath = application.getClass().getAnnotation(RestApplicationPath.class).value();
 
         assert basePath != null;
         assert !basePath.isEmpty();
@@ -45,8 +63,8 @@ public class SwaggerGenerator {
 
             builder.withBasePath(application.getClass().getAnnotation(RestApplicationPath.class).value());
             builder.withSchemes(SwaggerScheme.HTTP);
-            builder.withSecurityDefinition(API_KEY_AUTHENTICATION_IDENTIFIER, new SwaggerSecurityDefinition(AuthorizationType.API_KEY, SwaggerSecurityDefinition.InLocation.HEADER, "X-API-Key"));
-            addRestMethods(builder);
+            addAuthenticationsToSwagger(builder, application);
+            addRestMethods(builder, application);
 
             String host = application.getClass().isAnnotationPresent(RestServerInfo.class) ? application.getClass().getAnnotation(RestServerInfo.class).host() : (String) RestServerInfo.class.getMethod("host").getDefaultValue();
             int port = application.getClass().isAnnotationPresent(RestServerInfo.class) ? application.getClass().getAnnotation(RestServerInfo.class).httpPort() : (int) RestServerInfo.class.getMethod("httpPort").getDefaultValue();
@@ -63,25 +81,70 @@ public class SwaggerGenerator {
         }
     }
 
-    private void addRestMethods(SwaggerDocumentationBuilder builder) throws IOException {
+    private void addAuthenticationsToSwagger(SwaggerDocumentationBuilder builder, RestApplication application) throws
+                                                                                                               NoSuchMethodException,
+                                                                                                               InvocationTargetException,
+                                                                                                               InstantiationException,
+                                                                                                               IllegalAccessException {
+        if (!application.getClass().isAnnotationPresent(Auth.class)) {
+            return;
+        }
+        for (Class<? extends SingleValueAuthenticator> authenticator :
+                application.getClass().getAnnotation(Auth.class).value()) {
+            SingleValueAuthenticator authenticatorInstance = authenticator.getConstructor().newInstance();
+            String realm = authenticatorInstance.getRealm();
+            String headerName = authenticatorInstance.getHeaderName();
+            builder.withSecurityDefinition(realm,
+                    new SwaggerSecurityDefinition(realm, SwaggerSecurityDefinition.InLocation.HEADER, headerName));
+        }
+    }
+
+    private void addRestMethods(SwaggerDocumentationBuilder builder, RestApplication restApplication) throws
+                                                                                                      IOException,
+                                                                                                      InvocationTargetException,
+                                                                                                      NoSuchMethodException,
+                                                                                                      InstantiationException,
+                                                                                                      IllegalAccessException {
         for (Method method : application.getClass().getMethods()) {
             if (method.isAnnotationPresent(Path.class)) {
                 String description = method.isAnnotationPresent(SwaggerDescription.class) ? method.getAnnotation(SwaggerDescription.class).value() : "";
 
-                RestMethod restMethod = RestMethod.GET;
-                restMethod = method.isAnnotationPresent(GET.class) ? RestMethod.GET : restMethod;
-                restMethod = method.isAnnotationPresent(PUT.class) ? RestMethod.PUT : restMethod;
-                restMethod = method.isAnnotationPresent(DELETE.class) ? RestMethod.DELETE : restMethod;
-                restMethod = method.isAnnotationPresent(POST.class) ? RestMethod.POST : restMethod;
-
-                SwaggerRestMethod swaggerRestMethod = new SwaggerRestMethod(method.getAnnotation(Path.class).value(), restMethod);
-
-                swaggerRestMethod.withDescription(description);
+                SwaggerRestMethod swaggerRestMethod = getSwaggerRestMethod(method, description);
                 swaggerRestMethod.withParameters(addRestParameters(method));
                 swaggerRestMethod.withResponses(addResponses(method));
-                swaggerRestMethod.withSecurity(API_KEY_AUTHENTICATION_IDENTIFIER);
+                addAuthenticationsToRestMethod(swaggerRestMethod, restApplication);
                 builder.withRestMethod(swaggerRestMethod);
             }
+        }
+    }
+
+    private static SwaggerRestMethod getSwaggerRestMethod(Method method, String description) {
+        RestMethod restMethod = RestMethod.OPTIONS;
+        restMethod = method.isAnnotationPresent(GET.class) ? RestMethod.GET : restMethod;
+        restMethod = method.isAnnotationPresent(PUT.class) ? RestMethod.PUT : restMethod;
+        restMethod = method.isAnnotationPresent(DELETE.class) ? RestMethod.DELETE : restMethod;
+        restMethod = method.isAnnotationPresent(POST.class) ? RestMethod.POST : restMethod;
+
+        SwaggerRestMethod swaggerRestMethod = new SwaggerRestMethod(method.getAnnotation(Path.class).value(),
+                restMethod);
+
+        swaggerRestMethod.withDescription(description);
+        return swaggerRestMethod;
+    }
+
+    private void addAuthenticationsToRestMethod(SwaggerRestMethod swaggerRestMethod, RestApplication application) throws
+                                                                                                                  NoSuchMethodException,
+                                                                                                                  InvocationTargetException,
+                                                                                                                  InstantiationException,
+                                                                                                                  IllegalAccessException {
+        if (!application.getClass().isAnnotationPresent(Auth.class)) {
+            return;
+        }
+        for (Class<? extends SingleValueAuthenticator> authenticator :
+                application.getClass().getAnnotation(Auth.class).value()) {
+            SingleValueAuthenticator authenticatorInstance = authenticator.getConstructor().newInstance();
+            String realm = authenticatorInstance.getRealm();
+            swaggerRestMethod.withSecurity(realm);
         }
     }
 
@@ -110,8 +173,9 @@ public class SwaggerGenerator {
                 restParam.setType(type);
 
                 if (type.isEnum()) {
-                    Class<? extends Enum> enumType = (Class<? extends Enum>) type;
-                    Enum[] enumValues = enumType.getEnumConstants();
+                    @SuppressWarnings("unchecked")
+                    Class<? extends Enum<?>> enumType = (Class<? extends Enum<?>>) type;
+                    Enum<?>[] enumValues = enumType.getEnumConstants();
                     String[] enumStrings = Arrays.stream(enumValues).map(Enum::name).toArray(String[]::new);
                     restParam.setEnumValues(enumStrings);
                     restParam.setType(String.class);
@@ -168,8 +232,9 @@ public class SwaggerGenerator {
 
     private void createSwaggerFileIfNotExisting() throws IOException {
         if (!swaggerFile.exists()) {
-            swaggerFile.getParentFile().mkdirs();
-            swaggerFile.createNewFile();
+            if (!(swaggerFile.getParentFile().mkdirs() && swaggerFile.createNewFile())) {
+                throw new RuntimeException("Could not create swagger file!");
+            }
         }
     }
 }
