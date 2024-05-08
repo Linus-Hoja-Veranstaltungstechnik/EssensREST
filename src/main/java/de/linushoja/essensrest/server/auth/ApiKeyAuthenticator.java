@@ -1,5 +1,6 @@
 package de.linushoja.essensrest.server.auth;
 
+import com.sun.net.httpserver.HttpPrincipal;
 import de.linushoja.essensrest.server.RestMethod;
 import de.linushoja.essensrest.server.handler.ApiKeyHandler;
 import de.linushoja.essensrest.shared.auth.AuthorizationType;
@@ -13,17 +14,17 @@ public class ApiKeyAuthenticator extends SingleValueAuthenticator {
     }
 
     @Override
-    protected boolean checkValue(String value, RestMethod method, String path) {
+    protected HttpPrincipal checkValue(String value, RestMethod method, String path) {
         try {
             if (ApiKeyHandler.getInstance().apiKeyPresent(value)) {
                 String appName = ApiKeyHandler.getInstance().getAppName(value);
                 ApiKeyHandler.getInstance().calledMethod(method, path, appName);
-                return true;
+                return new HttpPrincipal(appName, REALM);
             }
         } catch (Exception e){
             e.printStackTrace();
         }
-        return false;
+        return null;
     }
 
 }

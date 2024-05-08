@@ -30,7 +30,11 @@ public abstract class SingleValueAuthenticator extends Authenticator {
 
     public Authenticator.Result authenticate(HttpExchange t) {
         Headers rmap = t.getRequestHeaders();
-        RestMethod method = RestMethod.valueOf(t.getRequestMethod());
+        String restMethodString = t.getRequestMethod();
+        if (restMethodString.equalsIgnoreCase("options")) {
+            return new Authenticator.Success(new HttpPrincipal("unknown", "unknown"));
+        }
+        RestMethod method = RestMethod.valueOf(restMethodString);
         String auth = rmap.getFirst(headerName);
         String restPath = t.getRequestURI().getPath();
         if (!RestApplicationHandler.getInstance().restMethodExists(RestMethod.valueOf(t.getRequestMethod().toUpperCase()), restPath)) {
@@ -41,8 +45,10 @@ public abstract class SingleValueAuthenticator extends Authenticator {
             return new Authenticator.Retry(401);
         }
 
-        if (this.checkValue(auth, method, restPath)) {
-            return new Authenticator.Success(new HttpPrincipal(auth, this.realm));
+        HttpPrincipal principal = this.checkValue(auth, method, restPath);
+
+        if (principal != null) {
+            return new Authenticator.Success(principal);
         } else {
             this.setAuthHeader(t);
             return new Authenticator.Failure(401);
@@ -55,5 +61,13 @@ public abstract class SingleValueAuthenticator extends Authenticator {
         map.set("WWW-Authenticate", authString);
     }
 
-    protected abstract boolean checkValue(String value, RestMethod method, String appName);
+    protected abstract HttpPrincipal checkValue(String value, RestMethod method, String restPath);
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public String getHeaderName() {
+        return headerName;
+    }
 }

@@ -42,7 +42,7 @@ public class RestApplicationHandler {
         int httpsPort = restApplication.getHttpsPort();
         HttpServer httpServer = WebServerHandler.getInstance().getHttpServer(httpPort);
         HttpsServer httpsServer = WebServerHandler.getInstance().getHttpsServer(httpsPort);
-        restApplication.init(httpsServer, httpServer);
+        restApplication.init(httpsServer, httpServer, restApplication.getMultiAuthenticator());
     }
 
     public boolean restMethodExists(RestMethod restMethod, String method) {

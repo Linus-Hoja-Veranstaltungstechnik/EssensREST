@@ -1,5 +1,11 @@
 package de.linushoja.essensrest.server.util;
 
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.util.List;
+
 public class ParameterUtils {
 
 
@@ -23,14 +29,21 @@ public class ParameterUtils {
             Class<? extends Enum> enumType = (Class<? extends Enum>) type;
             result = (T) Enum.valueOf(enumType, value.toUpperCase());
         } else {
-            try {
-                result = (T) value;
-            } catch (ClassCastException e) {
-                throw new RuntimeException("Unrecognized parameter type: " + type.getCanonicalName());
-            }
+            result = (T) value;
         }
 
         return result;
+    }
+
+    public static TypeToken<?> getType(Parameter parameter) {
+        if (parameter.getType().isArray()) {
+            return TypeToken.get(parameter.getType());
+        }
+        if (List.class.isAssignableFrom(parameter.getType())) {
+            return TypeToken.getParameterized(List.class,
+                    ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0]);
+        }
+        return TypeToken.get(parameter.getType());
     }
 
 }

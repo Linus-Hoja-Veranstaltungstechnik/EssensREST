@@ -3,13 +3,26 @@ package de.linushoja.essensrest.server.boundary;
 import de.linushoja.essensrest.Response;
 import de.linushoja.essensrest.server.RestApplication;
 import de.linushoja.essensrest.server.RestMethod;
+import de.linushoja.essensrest.server.annotations.Auth;
 import de.linushoja.essensrest.server.annotations.RestApplicationPath;
+import de.linushoja.essensrest.server.auth.ApiKeyAuthenticator;
+import de.linushoja.essensrest.server.cors.annotation.CORS;
 import de.linushoja.essensrest.server.handler.ApiKeyHandler;
-import de.linushoja.essensrest.server.swagger.annotations.*;
-import de.linushoja.essensrest.shared.annotations.*;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerDescription;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerExample;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerParameter;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerResponse;
+import de.linushoja.essensrest.server.swagger.annotations.SwaggerTitle;
+import de.linushoja.essensrest.shared.annotations.Entity;
+import de.linushoja.essensrest.shared.annotations.GET;
+import de.linushoja.essensrest.shared.annotations.PUT;
+import de.linushoja.essensrest.shared.annotations.Path;
+import de.linushoja.essensrest.shared.annotations.PathParam;
 
 @RestApplicationPath("/essensrest")
 @SwaggerTitle("EssensREST")
+@CORS()
+@Auth(ApiKeyAuthenticator.class)
 @SuppressWarnings("unused") // rest api
 public class EssensRestBoundary extends RestApplication {
 
