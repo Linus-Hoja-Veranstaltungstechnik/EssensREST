@@ -17,6 +17,7 @@ import de.linushoja.essensrest.server.annotations.Auth;
 import de.linushoja.essensrest.server.annotations.RestApplicationPath;
 import de.linushoja.essensrest.server.auth.AuthenticatorMultiplexer;
 import de.linushoja.essensrest.server.cors.annotation.CORS;
+import de.linushoja.essensrest.server.exceptions.ForbiddenAccessException;
 import de.linushoja.essensrest.server.handler.CORSHandler;
 import de.linushoja.essensrest.server.handler.RestApplicationHandler;
 import de.linushoja.essensrest.server.handler.SwaggerUiHandler;
@@ -190,7 +191,13 @@ public abstract class RestApplication {
         String[] fields = parsePath(requestedPath);
         int fieldCount = fields.length;
         List<Method> possibleMethods = methods.get(requestMethod);
+
+        if (possibleMethods == null) {
+            return null;
+        }
+
         possibleMethods.sort((m, om) -> paramCount(methodPaths.get(m)) - paramCount(methodPaths.get(om)));
+
 
         for (Method method : possibleMethods) {
             String methodPath = methodPaths.get(method);
@@ -258,10 +265,16 @@ public abstract class RestApplication {
         URI requestURI = exchange.getRequestURI();
         Response response;
 
-        if (requestMethod == RestMethod.OPTIONS) {
-            response = handleCORSRequest(requestURI);
-        } else {
-            response = handleRESTRequest(exchange, accept, requestMethod, requestURI);
+        try {
+            if (requestMethod == RestMethod.OPTIONS) {
+                response = handleCORSRequest(requestURI, exchange.getRequestHeaders());
+            } else {
+                response = CORSHandler.addCORSHeaders(handleRESTRequest(exchange, accept, requestMethod, requestURI),
+                        authActive, corsAnnotation);
+            }
+        } catch (Exception e) {
+            response =
+                    Response.serverError(e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace()));
         }
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -282,7 +295,7 @@ public abstract class RestApplication {
         }
     }
 
-    private Response handleCORSRequest(URI requestURI) {
+    private Response handleCORSRequest(URI requestURI, Headers requestHeaders) {
         if (!corsAnnotation.enabled()) {
             return Response.notFound();
         }
@@ -290,7 +303,7 @@ public abstract class RestApplication {
         List<RestMethod> restMethods = resolveRestMethodsByPath(requestURI.getPath());
         restMethods.add(RestMethod.OPTIONS);
 
-        return CORSHandler.getResponse(restMethods, authActive, corsAnnotation);
+        return CORSHandler.getResponse(restMethods, authActive, corsAnnotation, requestHeaders);
     }
 
     private Response handleRESTRequest(HttpExchange exchange, String accept, RestMethod requestMethod, URI requestURI) {
@@ -341,8 +354,9 @@ public abstract class RestApplication {
                             parameter.getType());
                     continue;
                 } else if (parameter.isAnnotationPresent(Entity.class)) {
-                    Object o = entity.startsWith("{") && !parameter.getType().isAssignableFrom(String.class) ?
-                            GsonHelper.getGson().fromJson(entity, parameter.getType()) : entity;
+                    Object o =
+                            (entity.startsWith("{") || entity.startsWith("[")) && !parameter.getType().isAssignableFrom(String.class) ?
+                            GsonHelper.getGson().fromJson(entity, ParameterUtils.getType(parameter)) : entity;
                     injectedParams[i] = o;
                     continue;
                 } else if (HttpPrincipal.class.isAssignableFrom(parameter.getType())) {
@@ -356,6 +370,13 @@ public abstract class RestApplication {
                 response = (Response) method.invoke(this);
             } else {
                 response = (Response) method.invoke(this, injectedParams);
+            }
+        } catch (InvocationTargetException e) {
+            if (!e.getCause().getClass().isAssignableFrom(ForbiddenAccessException.class)) {
+                response = Response.serverError("Error occured during method execution: " + e.getMessage());
+                e.printStackTrace();
+            } else {
+                response = Response.forbidden();
             }
         } catch (Exception e) {
             response = Response.serverError("Error occured during method execution: " + e.getMessage());

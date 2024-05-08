@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public record RestRequest(RestRequestTarget target, RestMethod restMethod, Map<String, List<String>> headers,
-                          String body) {
+                          String body, String restPath) {
 
     public static final String APPLICATION_JSON = "application/json";
 
@@ -25,8 +25,9 @@ public record RestRequest(RestRequestTarget target, RestMethod restMethod, Map<S
     public static class RestRequestBuilder {
         private final RestRequestTarget target;
         private RestMethod restMethod = RestMethod.GET;
-        private Map<String, List<String>> headers = new HashMap<>();
+        private final Map<String, List<String>> headers = new HashMap<>();
         private String body = "";
+        private String restPath = "";
 
         private RestRequestBuilder(RestRequestTarget target) {
             this.target = target;
@@ -38,6 +39,11 @@ public record RestRequest(RestRequestTarget target, RestMethod restMethod, Map<S
 
         public RestRequestBuilder method(RestMethod method) {
             this.restMethod = method;
+            return this;
+        }
+
+        public RestRequestBuilder path(String restPath) {
+            this.restPath = restPath;
             return this;
         }
 
@@ -72,7 +78,7 @@ public record RestRequest(RestRequestTarget target, RestMethod restMethod, Map<S
         }
 
         public RestRequest build() {
-            return new RestRequest(target, restMethod, headers, body);
+            return new RestRequest(target, restMethod, headers, body, restPath);
         }
     }
 
@@ -86,9 +92,8 @@ public record RestRequest(RestRequestTarget target, RestMethod restMethod, Map<S
 
     public HttpRequest getHttpRequest() {
         HttpRequest.Builder httpRequestBuilder = HttpRequest.newBuilder();
-        httpRequestBuilder.uri(target.toHttpURI());
-        //httpRequestBuilder.version(HttpClient.Version.HTTP_1_1);
-        headers.keySet().stream().forEach(key -> headers.get(key).forEach(value -> {
+        httpRequestBuilder.uri(target.toHttpURI(restPath));
+        headers.keySet().forEach(key -> headers.get(key).forEach(value -> {
             if (value != null) httpRequestBuilder.header(key, value);
         }));
         switch (restMethod) {
