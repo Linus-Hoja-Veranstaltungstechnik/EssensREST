@@ -8,6 +8,7 @@ import com.sun.net.httpserver.HttpsServer;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -38,12 +39,12 @@ public class WebServerHandler {
         return instance;
     }
 
-    public HttpServer getHttpServer(int port) {
+    public HttpServer getHttpServer(int port, boolean optional) {
         HttpServer server = httpServers.get(port);
-        return server == null ? initHttpServer(port) : server;
+        return server == null ? initHttpServer(port, optional) : server;
     }
 
-    private HttpServer initHttpServer(int port) {
+    private HttpServer initHttpServer(int port, boolean optional) {
         try {
             HttpServer httpServer = HttpServer.create(new InetSocketAddress(port), 10);
 
@@ -53,17 +54,23 @@ public class WebServerHandler {
 
             httpServers.put(port, httpServer);
             return httpServer;
+        } catch (BindException e) {
+            if(!optional){
+                throw new RuntimeException(e);
+            }
+            System.err.println("WARN: Optional Boundary could not be started: " + e.getMessage());
+            return null;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public HttpsServer getHttpsServer(int port) {
+    public HttpsServer getHttpsServer(int port, boolean optional) {
         HttpsServer server = httpsServers.get(port);
-        return server == null ? initHttpsServer(port) : server;
+        return server == null ? initHttpsServer(port, optional) : server;
     }
 
-    private HttpsServer initHttpsServer(int port) {
+    private HttpsServer initHttpsServer(int port, boolean optional) {
         try {
             HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(port), 10);
 
@@ -75,6 +82,12 @@ public class WebServerHandler {
 
             httpsServers.put(port, httpsServer);
             return httpsServer;
+        }  catch (BindException e) {
+            if(!optional){
+                throw new RuntimeException(e);
+            }
+            System.err.println("WARN: Optional Boundary could not be started: " + e.getMessage());
+            return null;
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException |
                  UnrecoverableKeyException |
                  KeyManagementException e) {

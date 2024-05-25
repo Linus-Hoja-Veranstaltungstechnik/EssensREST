@@ -4,10 +4,12 @@ import de.linushoja.essensrest.Response;
 import de.linushoja.essensrest.server.RestApplication;
 import de.linushoja.essensrest.server.RestMethod;
 import de.linushoja.essensrest.server.annotations.Auth;
+import de.linushoja.essensrest.server.annotations.Optional;
 import de.linushoja.essensrest.server.annotations.RestApplicationPath;
 import de.linushoja.essensrest.server.auth.ApiKeyAuthenticator;
 import de.linushoja.essensrest.server.cors.annotation.CORS;
 import de.linushoja.essensrest.server.handler.ApiKeyHandler;
+import de.linushoja.essensrest.server.swagger.annotations.Swagger;
 import de.linushoja.essensrest.server.swagger.annotations.SwaggerDescription;
 import de.linushoja.essensrest.server.swagger.annotations.SwaggerExample;
 import de.linushoja.essensrest.server.swagger.annotations.SwaggerParameter;
@@ -20,8 +22,10 @@ import de.linushoja.essensrest.shared.annotations.Path;
 import de.linushoja.essensrest.shared.annotations.PathParam;
 
 @RestApplicationPath("/essensrest")
+@Swagger
 @SwaggerTitle("EssensREST")
-@CORS()
+@Optional
+@CORS
 @Auth(ApiKeyAuthenticator.class)
 @SuppressWarnings("unused") // rest api
 public class EssensRestBoundary extends RestApplication {

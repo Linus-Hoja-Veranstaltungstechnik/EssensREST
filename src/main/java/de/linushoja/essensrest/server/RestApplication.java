@@ -22,6 +22,7 @@ import de.linushoja.essensrest.server.handler.CORSHandler;
 import de.linushoja.essensrest.server.handler.RestApplicationHandler;
 import de.linushoja.essensrest.server.handler.SwaggerUiHandler;
 import de.linushoja.essensrest.server.swagger.SwaggerGenerator;
+import de.linushoja.essensrest.server.swagger.annotations.Swagger;
 import de.linushoja.essensrest.server.util.ParameterUtils;
 import de.linushoja.essensrest.shared.annotations.Entity;
 import de.linushoja.essensrest.shared.annotations.Path;
@@ -126,7 +127,7 @@ public abstract class RestApplication {
 
         SwaggerGenerator swaggerGenerator = new SwaggerGenerator(this);
         File swaggerFile = swaggerGenerator.generate();
-        SwaggerUiHandler.register(rootPath, swaggerFile, server);
+        if(this.getClass().isAnnotationPresent(Swagger.class)) SwaggerUiHandler.register(rootPath, swaggerFile, server);
         return server.createContext(rootPath, server instanceof HttpsServer ? new HttpsExchangeHandler() : new HttpExchangeHandler());
     }
 

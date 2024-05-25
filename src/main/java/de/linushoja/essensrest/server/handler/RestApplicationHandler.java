@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 import de.linushoja.essensrest.server.RestApplication;
 import de.linushoja.essensrest.server.RestMethod;
+import de.linushoja.essensrest.server.annotations.Optional;
 import de.linushoja.essensrest.server.boundary.EssensRestBoundary;
 
 import java.util.LinkedList;
@@ -40,9 +41,13 @@ public class RestApplicationHandler {
         restApplications.add(restApplication);
         int httpPort = restApplication.getHttpPort();
         int httpsPort = restApplication.getHttpsPort();
-        HttpServer httpServer = WebServerHandler.getInstance().getHttpServer(httpPort);
-        HttpsServer httpsServer = WebServerHandler.getInstance().getHttpsServer(httpsPort);
-        restApplication.init(httpsServer, httpServer, restApplication.getMultiAuthenticator());
+        HttpServer httpServer = WebServerHandler.getInstance().getHttpServer(httpPort,
+                restApplication.getClass().isAnnotationPresent(Optional.class));
+        HttpsServer httpsServer = WebServerHandler.getInstance().getHttpsServer(httpsPort,
+                restApplication.getClass().isAnnotationPresent(Optional.class));
+        if (httpsServer != null && httpServer != null) {
+            restApplication.init(httpsServer, httpServer, restApplication.getMultiAuthenticator());
+        }
     }
 
     public boolean restMethodExists(RestMethod restMethod, String method) {
