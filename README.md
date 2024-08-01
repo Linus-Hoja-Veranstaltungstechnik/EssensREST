@@ -54,7 +54,7 @@ public class MetaBoundary extends RestApplication {     // von RestApplication e
     @SwaggerDescription("Can be used to get some data.")
     @SwaggerResponse(description = "OK")
     @Path("/do-something/{path-param}/example")
-    public Response doSomething(@PathParam("path-param") String exampleParam) {  // Path-Parameter können ebenfalls direkt in primitive Objekte umgewandelt werden (String, ind, double, etc.)
+    public Response doSomething(@PathParam("path-param") String exampleParam) {  // Path-Parameter können ebenfalls direkt in primitive Objekte umgewandelt werden (String, int, double, etc.)
         
         // ...
         //
