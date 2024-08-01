@@ -3,7 +3,7 @@
 Dieses Artefakt bietet folgende beide Funktionalitäten:
 * [Aufbauen von Rest-Schnittstellen](#aufbauen-von-rest-schnittstellen) durch Annotations nach Vorbild von JAX-RS (stark abgewandelt)
 * [Ansprechen von Rest-Endpunkten](#ansprechen-von-rest-endpunkten)
-
+* [Automatische Swagger Dokumentation](#swagger)
 ---
 
 ## Aufbauen von Rest-Schnittstellen
@@ -75,5 +75,9 @@ Path-Parameter und die Payload können wie im Beispiel in die Methode übergeben
 
 ---
 ## Ansprechen von Rest-Endpunkten
+
+ to do
+
+## Swagger
 
  to do
